@@ -248,7 +248,7 @@ export function RecipeImporter() {
 
           <div className="space-y-2">
             {draft.ingredients.map((ingredient, index) => (
-              <div key={`${ingredient.nameDisplay}-${index}`} className="grid gap-2 sm:grid-cols-12">
+              <div key={`${ingredient.nameDisplay}-${index}`} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
                   value={ingredient.nameDisplay}
                   onChange={(event) => {
@@ -260,27 +260,29 @@ export function RecipeImporter() {
                     };
                     setDraft({ ...draft, ingredients: next });
                   }}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 sm:col-span-6"
+                  className="w-full rounded-xl border border-slate-200 bg-[#f2f6ff] px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500"
                 />
-                <input
-                  value={ingredient.quantity}
-                  inputMode="decimal"
-                  onChange={(event) => {
-                    const next = [...draft.ingredients];
-                    next[index] = { ...next[index], quantity: toNumber(event.target.value, 1) };
-                    setDraft({ ...draft, ingredients: next });
-                  }}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 sm:col-span-2"
-                />
-                <input
-                  value={ingredient.unit}
-                  onChange={(event) => {
-                    const next = [...draft.ingredients];
-                    next[index] = { ...next[index], unit: event.target.value };
-                    setDraft({ ...draft, ingredients: next });
-                  }}
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500 sm:col-span-3"
-                />
+                <div className="grid grid-cols-[6rem_1fr] gap-2 sm:w-52">
+                  <input
+                    value={ingredient.quantity}
+                    inputMode="decimal"
+                    onChange={(event) => {
+                      const next = [...draft.ingredients];
+                      next[index] = { ...next[index], quantity: toNumber(event.target.value, 1) };
+                      setDraft({ ...draft, ingredients: next });
+                    }}
+                    className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                  />
+                  <input
+                    value={ingredient.unit}
+                    onChange={(event) => {
+                      const next = [...draft.ingredients];
+                      next[index] = { ...next[index], unit: event.target.value };
+                      setDraft({ ...draft, ingredients: next });
+                    }}
+                    className="rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                  />
+                </div>
                 <button
                   type="button"
                   onClick={() =>
@@ -289,7 +291,7 @@ export function RecipeImporter() {
                       ingredients: draft.ingredients.filter((_, currentIndex) => currentIndex !== index),
                     })
                   }
-                  className="rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-600 transition hover:border-slate-500 hover:text-slate-900 sm:col-span-1"
+                  className="rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-600 transition hover:border-slate-500 hover:text-slate-900 sm:w-20"
                 >
                   Remove
                 </button>

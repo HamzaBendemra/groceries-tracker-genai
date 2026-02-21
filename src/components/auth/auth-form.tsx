@@ -72,6 +72,9 @@ export function AuthForm() {
     <div className="w-full max-w-sm rounded-3xl border border-white/35 bg-white/90 p-7 shadow-[0_24px_80px_-40px_rgba(22,52,79,0.45)] backdrop-blur">
       <h1 className="font-display text-3xl text-slate-900">Groceries</h1>
       <p className="mt-1 text-sm text-slate-600">Sign in to manage your shared household list.</p>
+      <p className="mt-2 text-xs italic text-slate-500">
+        Built by Hamza for his beautiful wife Christine.
+      </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleMagicLink}>
         <label className="block text-sm font-medium text-slate-700" htmlFor="email">

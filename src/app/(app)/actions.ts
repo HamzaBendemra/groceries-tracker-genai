@@ -35,7 +35,7 @@ type AddItemInput = {
   nameDisplay: string;
   quantity: number;
   unit: string;
-  category: string;
+  category?: string;
   sourceType?: "baseline" | "recipe";
   sourceId?: string;
   sourceLabel?: string;
@@ -81,7 +81,7 @@ async function mergeGroceryItem(input: AddItemInput) {
         name_normalized: normalizedName,
         quantity: roundQuantity(input.quantity),
         unit: normalizedUnit,
-        category: input.category,
+        category: input.category ?? "general",
         status: "needed",
       })
       .select("id")
@@ -190,7 +190,6 @@ export async function addBaselineItemAction(formData: FormData) {
     throw new Error("Item name is required.");
   }
 
-  const category = formData.get("category")?.toString().trim() || "other";
   const quantity = numberFromForm(formData.get("quantity"), 1);
   const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
   const normalizedName = normalizeIngredientName(name);
@@ -202,7 +201,7 @@ export async function addBaselineItemAction(formData: FormData) {
       created_by: context.userId,
       name_display: name,
       name_normalized: normalizedName,
-      category,
+      category: "baseline",
       default_quantity: quantity,
       default_unit: unit,
       is_active: true,
@@ -268,7 +267,6 @@ export async function addManualGroceryItemAction(formData: FormData) {
 
   const quantity = numberFromForm(formData.get("quantity"), 1);
   const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
-  const category = formData.get("category")?.toString().trim() || "other";
 
   await mergeGroceryItem({
     householdId: context.activeHousehold.id,
@@ -276,7 +274,7 @@ export async function addManualGroceryItemAction(formData: FormData) {
     nameDisplay: name,
     quantity,
     unit,
-    category,
+    category: "general",
   });
 
   revalidatePath("/groceries");
@@ -304,6 +302,97 @@ export async function toggleGroceryItemAction(formData: FormData) {
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  revalidatePath("/groceries");
+}
+
+export async function updateGroceryItemAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const groceryItemId = formData.get("groceryItemId")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  if (!groceryItemId || !name) {
+    throw new Error("Grocery item and name are required.");
+  }
+
+  const quantity = numberFromForm(formData.get("quantity"), 1);
+  const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
+  const normalizedName = normalizeIngredientName(name);
+
+  const supabase = await createClient();
+  const { error: updateError } = await supabase
+    .from("grocery_items")
+    .update({
+      name_display: name,
+      name_normalized: normalizedName,
+      quantity,
+      unit,
+    })
+    .eq("id", groceryItemId)
+    .eq("household_id", context.activeHousehold.id);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  const { error: sourceUpdateError } = await supabase
+    .from("grocery_item_sources")
+    .update({ unit })
+    .eq("grocery_item_id", groceryItemId);
+
+  if (sourceUpdateError) {
+    throw new Error(sourceUpdateError.message);
+  }
+
+  revalidatePath("/groceries");
+}
+
+export async function resetGroceriesAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const mode = formData.get("mode")?.toString() === "baseline" ? "baseline" : "empty";
+  const supabase = await createClient();
+
+  const { error: deleteError } = await supabase
+    .from("grocery_items")
+    .delete()
+    .eq("household_id", context.activeHousehold.id);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  if (mode === "baseline") {
+    const { data: baselineItems, error: baselineError } = await supabase
+      .from("baseline_items")
+      .select("id,name_display,default_quantity,default_unit")
+      .eq("household_id", context.activeHousehold.id)
+      .eq("is_active", true);
+
+    if (baselineError) {
+      throw new Error(baselineError.message);
+    }
+
+    for (const baselineItem of baselineItems ?? []) {
+      await mergeGroceryItem({
+        householdId: context.activeHousehold.id,
+        userId: context.userId,
+        nameDisplay: baselineItem.name_display,
+        quantity: baselineItem.default_quantity,
+        unit: baselineItem.default_unit,
+        category: "baseline",
+        sourceType: "baseline",
+        sourceId: baselineItem.id,
+        sourceLabel: baselineItem.name_display,
+      });
+    }
   }
 
   revalidatePath("/groceries");

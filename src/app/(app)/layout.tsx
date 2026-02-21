@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <AppShell displayName={context.displayName} householdName={context.activeHousehold.name}>
+    <AppShell displayName={context.displayName}>
       {children}
     </AppShell>
   );
