@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RecipeDraft } from "@/lib/data/types";
 import { normalizeIngredientName } from "@/lib/ingredients/normalize";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 
 type ImportMode = "url" | "image_meal" | "image_recipe_page";
 
@@ -253,10 +254,11 @@ export function RecipeImporter() {
                   value={ingredient.nameDisplay}
                   onChange={(event) => {
                     const next = [...draft.ingredients];
+                    const displayName = toTitleCase(event.target.value);
                     next[index] = {
                       ...next[index],
-                      nameDisplay: event.target.value,
-                      nameNormalized: normalizeIngredientName(event.target.value),
+                      nameDisplay: displayName,
+                      nameNormalized: normalizeIngredientName(displayName),
                     };
                     setDraft({ ...draft, ingredients: next });
                   }}

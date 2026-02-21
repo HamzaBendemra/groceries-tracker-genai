@@ -5,6 +5,7 @@ import { z } from "zod";
 import { env, isAnthropicConfigured, isOpenAiConfigured } from "@/lib/env";
 import type { RecipeSourceType, RecipeDraft } from "@/lib/data/types";
 import { normalizeIngredientName } from "@/lib/ingredients/normalize";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 import { normalizeUnit } from "@/lib/ingredients/units";
 
 const IngredientSchema = z.object({
@@ -60,14 +61,17 @@ function toRecipeDraft(parsed: z.infer<typeof ExtractedRecipeSchema>, sourceType
     servings: parsed.servings,
     dietaryTags: parsed.dietaryTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean),
     confidence: parsed.confidence,
-    ingredients: parsed.ingredients.map((ingredient) => ({
-      nameDisplay: ingredient.name.trim(),
-      nameNormalized: normalizeIngredientName(ingredient.name),
-      quantity: ingredient.quantity,
-      unit: normalizeUnit(ingredient.unit),
-      isOptional: ingredient.optional,
-      notes: ingredient.notes ?? null,
-    })),
+    ingredients: parsed.ingredients.map((ingredient) => {
+      const displayName = toTitleCase(ingredient.name.trim());
+      return {
+        nameDisplay: displayName,
+        nameNormalized: normalizeIngredientName(displayName),
+        quantity: ingredient.quantity,
+        unit: normalizeUnit(ingredient.unit),
+        isOptional: ingredient.optional,
+        notes: ingredient.notes ?? null,
+      };
+    }),
   };
 }
 

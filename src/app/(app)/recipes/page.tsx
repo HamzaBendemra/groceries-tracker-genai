@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
-import { addRecipeToGroceriesAction } from "@/app/(app)/actions";
+import {
+  addRecipeIngredientAction,
+  addRecipeToGroceriesAction,
+} from "@/app/(app)/actions";
+import { EditableIngredients } from "@/components/recipes/editable-ingredients";
+import { UnitDropdown } from "@/components/forms/unit-dropdown";
 import { getAppContext } from "@/lib/data/context";
+import { COOKING_UNITS } from "@/lib/ingredients/cooking-units";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 import { createClient } from "@/lib/supabase/server";
 import { RecipeImporter } from "@/components/recipes/recipe-importer";
 
@@ -35,7 +42,7 @@ export default async function RecipesPage() {
     <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
       <RecipeImporter />
 
-      <section className="space-y-4 rounded-3xl border border-white/40 bg-white/80 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
+      <section className="space-y-4 rounded-3xl border border-[#dce8ff] bg-[#f7fbff]/95 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Saved Recipes</p>
           <h2 className="font-display text-2xl text-slate-900">Cook and add ingredients</h2>
@@ -48,7 +55,7 @@ export default async function RecipesPage() {
         ) : (
           <div className="space-y-3">
             {recipes?.map((recipe) => (
-              <article key={recipe.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <article key={recipe.id} className="rounded-2xl border border-[#dbe7ff] bg-white p-4 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]">
                 <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{recipe.source_type.replaceAll("_", " ")}</p>
                 <h3 className="mt-1 font-display text-xl text-slate-900">{recipe.title}</h3>
                 {recipe.description ? <p className="mt-1 text-sm text-slate-600">{recipe.description}</p> : null}
@@ -74,15 +81,55 @@ export default async function RecipesPage() {
                     name="targetServings"
                     defaultValue={recipe.servings}
                     inputMode="decimal"
-                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                    className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
                   />
                   <button
                     type="submit"
-                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                    className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
                   >
                     Add to groceries
                   </button>
                 </form>
+
+                <details className="mt-3 rounded-xl border border-[#e2ebff] bg-[#f6f9ff] p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-slate-700">
+                    View and edit ingredients
+                  </summary>
+                  <div className="mt-3">
+                    <EditableIngredients
+                      recipeId={recipe.id}
+                      initialIngredients={recipe.recipe_ingredients.map((ingredient) => ({
+                        ...ingredient,
+                        name_display: toTitleCase(ingredient.name_display),
+                      }))}
+                    />
+                  </div>
+
+                  <form action={addRecipeIngredientAction} className="mt-3 grid gap-2 rounded-xl border border-[#dce7ff] bg-white p-2">
+                    <input type="hidden" name="recipeId" value={recipe.id} />
+                    <input
+                      name="name"
+                      placeholder="New ingredient"
+                      required
+                      className="min-h-11 rounded-lg border border-slate-300 bg-[#f2f6ff] px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500"
+                    />
+                    <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
+                      <input
+                        name="quantity"
+                        defaultValue="1"
+                        inputMode="decimal"
+                        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                      />
+                      <UnitDropdown name="unit" defaultValue="unit" options={COOKING_UNITS} />
+                      <button
+                        type="submit"
+                        className="min-h-11 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </form>
+                </details>
               </article>
             ))}
           </div>

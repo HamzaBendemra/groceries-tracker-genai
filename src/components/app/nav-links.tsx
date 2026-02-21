@@ -14,7 +14,7 @@ export function NavLinks() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-2 overflow-x-auto pb-1">
+    <nav className="flex gap-2 overflow-x-auto rounded-2xl bg-white/65 p-1.5 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)]">
       {links.map((link) => {
         const isActive = pathname.startsWith(link.href);
 
@@ -23,10 +23,10 @@ export function NavLinks() {
             key={link.href}
             href={link.href}
             className={clsx(
-              "rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition",
+              "min-h-11 rounded-full px-4 py-2.5 text-sm font-medium whitespace-nowrap transition",
               isActive
-                ? "bg-slate-900 text-white"
-                : "bg-white/70 text-slate-700 hover:bg-white hover:text-slate-900",
+                ? "bg-slate-900 text-white shadow-[0_10px_20px_-14px_rgba(15,23,42,0.8)]"
+                : "text-slate-700 hover:bg-white hover:text-slate-900",
             )}
           >
             {link.label}

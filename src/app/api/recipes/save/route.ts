@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { normalizeIngredientName } from "@/lib/ingredients/normalize";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeUnit } from "@/lib/ingredients/units";
 
@@ -69,15 +71,18 @@ export async function POST(request: Request) {
     }
 
     const { error: ingredientError } = await supabase.from("recipe_ingredients").insert(
-      draft.ingredients.map((ingredient) => ({
-        recipe_id: recipeRow.id,
-        name_display: ingredient.nameDisplay,
-        name_normalized: ingredient.nameNormalized,
-        quantity: ingredient.quantity,
-        unit: normalizeUnit(ingredient.unit),
-        is_optional: ingredient.isOptional ?? false,
-        notes: ingredient.notes,
-      })),
+      draft.ingredients.map((ingredient) => {
+        const displayName = toTitleCase(ingredient.nameDisplay);
+        return {
+          recipe_id: recipeRow.id,
+          name_display: displayName,
+          name_normalized: normalizeIngredientName(displayName),
+          quantity: ingredient.quantity,
+          unit: normalizeUnit(ingredient.unit),
+          is_optional: ingredient.isOptional ?? false,
+          notes: ingredient.notes,
+        };
+      }),
     );
 
     if (ingredientError) {

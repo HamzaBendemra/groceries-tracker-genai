@@ -16,9 +16,9 @@ async function signOut() {
 
 export function AppShell({ children, displayName }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#fff_0%,_#eef4ff_45%,_#f9efe8_100%)] pb-20">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_#ffffff_0%,_#eef5ff_40%,_#fff4ea_72%,_#effbf5_100%)] pb-24">
       <header className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 pt-6 sm:px-8">
-        <div className="flex items-start justify-between gap-4 rounded-3xl border border-white/40 bg-white/70 p-5 shadow-[0_30px_80px_-50px_rgba(16,23,49,0.35)] backdrop-blur">
+        <div className="flex items-start justify-between gap-4 rounded-3xl border border-white/45 bg-white/75 p-5 shadow-[0_30px_80px_-50px_rgba(16,23,49,0.35)] backdrop-blur">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Shared Household</p>
             <h1 className="font-display text-3xl text-slate-900">Family&apos;s Groceries</h1>
@@ -27,7 +27,7 @@ export function AppShell({ children, displayName }: AppShellProps) {
           <form action={signOut}>
             <button
               type="submit"
-              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+              className="min-h-11 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
             >
               Sign out
             </button>
@@ -37,6 +37,9 @@ export function AppShell({ children, displayName }: AppShellProps) {
       </header>
 
       <main className="mx-auto mt-5 w-full max-w-5xl px-4 sm:px-8">{children}</main>
+      <footer className="mx-auto mt-8 w-full max-w-5xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-slate-500 sm:px-8">
+        For Christine ❤️
+      </footer>
     </div>
   );
 }

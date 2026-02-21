@@ -3,6 +3,20 @@
 import { FormEvent, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+function GoogleMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4">
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.9h5.5c-.2 1.2-1.4 3.5-5.5 3.5-3.3 0-6-2.8-6-6.2s2.7-6.2 6-6.2c1.9 0 3.2.8 3.9 1.5l2.7-2.7C17.3 2.7 14.9 1.6 12 1.6 6.6 1.6 2.2 6 2.2 11.4s4.4 9.8 9.8 9.8c5.6 0 9.3-3.9 9.3-9.4 0-.6-.1-1.1-.2-1.6H12z"
+      />
+      <path fill="#34A853" d="M2.2 11.4c0-1.7.7-3.3 1.8-4.5l3 2.3c-.5.6-.8 1.4-.8 2.2s.3 1.6.8 2.2l-3 2.3c-1.1-1.2-1.8-2.8-1.8-4.5z" />
+      <path fill="#4285F4" d="M12 21.2c2.7 0 4.9-.9 6.5-2.4l-3.1-2.4c-.9.6-2 .9-3.4.9-2.6 0-4.7-1.7-5.5-4.1L3.4 15.6c1.8 3.5 5 5.6 8.6 5.6z" />
+      <path fill="#FBBC05" d="M6.5 13.2c-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8L3.4 7.2c-.7 1.3-1.2 2.7-1.2 4.2s.4 2.9 1.2 4.2l3.1-2.4z" />
+    </svg>
+  );
+}
+
 export function AuthForm() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -70,13 +84,23 @@ export function AuthForm() {
 
   return (
     <div className="w-full max-w-sm rounded-3xl border border-white/35 bg-white/90 p-7 shadow-[0_24px_80px_-40px_rgba(22,52,79,0.45)] backdrop-blur">
-      <h1 className="font-display text-3xl text-slate-900">Groceries</h1>
+      <h1 className="font-display text-3xl text-slate-900">Family Groceries</h1>
       <p className="mt-1 text-sm text-slate-600">Sign in to manage your shared household list.</p>
-      <p className="mt-2 text-xs italic text-slate-500">
-        Built by Hamza for his beautiful wife Christine.
-      </p>
+      <div className="my-5 h-px bg-slate-200" />
 
-      <form className="mt-6 space-y-4" onSubmit={handleMagicLink}>
+      <button
+        type="button"
+        disabled={isLoading}
+        onClick={handleGoogle}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <GoogleMark />
+        <span>Sign in with Google</span>
+      </button>
+
+      <div className="my-5 h-px bg-slate-200" />
+
+      <form className="space-y-4" onSubmit={handleMagicLink}>
         <label className="block text-sm font-medium text-slate-700" htmlFor="email">
           Email
         </label>
@@ -97,17 +121,6 @@ export function AuthForm() {
           {isLoading ? "Sending..." : "Email Magic Link"}
         </button>
       </form>
-
-      <div className="my-5 h-px bg-slate-200" />
-
-      <button
-        type="button"
-        disabled={isLoading}
-        onClick={handleGoogle}
-        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        Continue with Google
-      </button>
 
       {message ? <p className="mt-4 text-sm text-emerald-700">{message}</p> : null}
       {error ? <p className="mt-4 text-sm text-rose-700">{error}</p> : null}

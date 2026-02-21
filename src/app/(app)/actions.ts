@@ -5,6 +5,7 @@ import { z } from "zod";
 import { getAppContext } from "@/lib/data/context";
 import { normalizeIngredientName } from "@/lib/ingredients/normalize";
 import { findMergeTarget } from "@/lib/ingredients/merge";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 import { normalizeUnit, roundQuantity, convertQuantity } from "@/lib/ingredients/units";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,9 +51,23 @@ const numberFromForm = (value: FormDataEntryValue | null, fallback = 1) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+async function ensureRecipeAccess(supabase: Awaited<ReturnType<typeof createClient>>, recipeId: string, householdId: string) {
+  const { data: recipe, error } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("id", recipeId)
+    .eq("household_id", householdId)
+    .single();
+
+  if (error || !recipe) {
+    throw new Error("Recipe not found.");
+  }
+}
+
 async function mergeGroceryItem(input: AddItemInput) {
   const supabase = await createClient();
-  const normalizedName = normalizeIngredientName(input.nameDisplay);
+  const displayName = toTitleCase(input.nameDisplay);
+  const normalizedName = normalizeIngredientName(displayName);
   const normalizedUnit = normalizeUnit(input.unit);
 
   const { data: existingRows } = await supabase
@@ -69,7 +84,7 @@ async function mergeGroceryItem(input: AddItemInput) {
   if (groceryItemId) {
     await supabase
       .from("grocery_items")
-      .update({ quantity: merge.mergedQuantity, name_display: input.nameDisplay, unit: merge.mergedUnit })
+      .update({ quantity: merge.mergedQuantity, name_display: displayName, unit: merge.mergedUnit })
       .eq("id", groceryItemId);
   } else {
     const { data: inserted, error } = await supabase
@@ -77,7 +92,7 @@ async function mergeGroceryItem(input: AddItemInput) {
       .insert({
         household_id: input.householdId,
         created_by: input.userId,
-        name_display: input.nameDisplay,
+        name_display: displayName,
         name_normalized: normalizedName,
         quantity: roundQuantity(input.quantity),
         unit: normalizedUnit,
@@ -192,14 +207,15 @@ export async function addBaselineItemAction(formData: FormData) {
 
   const quantity = numberFromForm(formData.get("quantity"), 1);
   const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
-  const normalizedName = normalizeIngredientName(name);
+  const displayName = toTitleCase(name);
+  const normalizedName = normalizeIngredientName(displayName);
 
   const supabase = await createClient();
   const { error } = await supabase.from("baseline_items").upsert(
     {
       household_id: context.activeHousehold.id,
       created_by: context.userId,
-      name_display: name,
+      name_display: displayName,
       name_normalized: normalizedName,
       category: "baseline",
       default_quantity: quantity,
@@ -267,11 +283,12 @@ export async function addManualGroceryItemAction(formData: FormData) {
 
   const quantity = numberFromForm(formData.get("quantity"), 1);
   const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
+  const displayName = toTitleCase(name);
 
   await mergeGroceryItem({
     householdId: context.activeHousehold.id,
     userId: context.userId,
-    nameDisplay: name,
+    nameDisplay: displayName,
     quantity,
     unit,
     category: "general",
@@ -321,13 +338,14 @@ export async function updateGroceryItemAction(formData: FormData) {
 
   const quantity = numberFromForm(formData.get("quantity"), 1);
   const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
-  const normalizedName = normalizeIngredientName(name);
+  const displayName = toTitleCase(name);
+  const normalizedName = normalizeIngredientName(displayName);
 
   const supabase = await createClient();
   const { error: updateError } = await supabase
     .from("grocery_items")
     .update({
-      name_display: name,
+      name_display: displayName,
       name_normalized: normalizedName,
       quantity,
       unit,
@@ -432,15 +450,18 @@ export async function saveRecipeAction(formData: FormData) {
     throw new Error(recipeError?.message ?? "Unable to save recipe.");
   }
 
-  const ingredientRows = draft.ingredients.map((ingredient) => ({
-    recipe_id: recipeRow.id,
-    name_display: ingredient.nameDisplay,
-    name_normalized: ingredient.nameNormalized,
-    quantity: ingredient.quantity,
-    unit: normalizeUnit(ingredient.unit),
-    is_optional: ingredient.isOptional ?? false,
-    notes: ingredient.notes,
-  }));
+  const ingredientRows = draft.ingredients.map((ingredient) => {
+    const displayName = toTitleCase(ingredient.nameDisplay);
+    return {
+      recipe_id: recipeRow.id,
+      name_display: displayName,
+      name_normalized: normalizeIngredientName(displayName),
+      quantity: ingredient.quantity,
+      unit: normalizeUnit(ingredient.unit),
+      is_optional: ingredient.isOptional ?? false,
+      notes: ingredient.notes,
+    };
+  });
 
   const { error: ingredientError } = await supabase.from("recipe_ingredients").insert(ingredientRows);
   if (ingredientError) {
@@ -518,4 +539,104 @@ export async function addRecipeToGroceriesAction(formData: FormData) {
   }
 
   revalidatePath("/groceries");
+}
+
+export async function addRecipeIngredientAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const recipeId = formData.get("recipeId")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  if (!recipeId || !name) {
+    throw new Error("Recipe and ingredient name are required.");
+  }
+
+  const quantity = numberFromForm(formData.get("quantity"), 1);
+  const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
+  const displayName = toTitleCase(name);
+  const supabase = await createClient();
+
+  await ensureRecipeAccess(supabase, recipeId, context.activeHousehold.id);
+
+  const { error } = await supabase.from("recipe_ingredients").insert({
+    recipe_id: recipeId,
+    name_display: displayName,
+    name_normalized: normalizeIngredientName(displayName),
+    quantity,
+    unit,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/recipes");
+}
+
+export async function updateRecipeIngredientAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const recipeId = formData.get("recipeId")?.toString();
+  const ingredientId = formData.get("ingredientId")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  if (!recipeId || !ingredientId || !name) {
+    throw new Error("Recipe, ingredient, and name are required.");
+  }
+
+  const quantity = numberFromForm(formData.get("quantity"), 1);
+  const unit = normalizeUnit(formData.get("unit")?.toString() ?? "unit");
+  const displayName = toTitleCase(name);
+  const supabase = await createClient();
+
+  await ensureRecipeAccess(supabase, recipeId, context.activeHousehold.id);
+
+  const { error } = await supabase
+    .from("recipe_ingredients")
+    .update({
+      name_display: displayName,
+      name_normalized: normalizeIngredientName(displayName),
+      quantity,
+      unit,
+    })
+    .eq("id", ingredientId)
+    .eq("recipe_id", recipeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/recipes");
+}
+
+export async function deleteRecipeIngredientAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const recipeId = formData.get("recipeId")?.toString();
+  const ingredientId = formData.get("ingredientId")?.toString();
+  if (!recipeId || !ingredientId) {
+    throw new Error("Recipe and ingredient are required.");
+  }
+
+  const supabase = await createClient();
+  await ensureRecipeAccess(supabase, recipeId, context.activeHousehold.id);
+
+  const { error } = await supabase
+    .from("recipe_ingredients")
+    .delete()
+    .eq("id", ingredientId)
+    .eq("recipe_id", recipeId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/recipes");
 }

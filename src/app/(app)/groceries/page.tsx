@@ -10,6 +10,7 @@ import {
 import { UnitDropdown } from "@/components/forms/unit-dropdown";
 import { getAppContext } from "@/lib/data/context";
 import { COOKING_UNITS } from "@/lib/ingredients/cooking-units";
+import { toTitleCase } from "@/lib/ingredients/title-case";
 import { createClient } from "@/lib/supabase/server";
 import type { GroceryItemWithSources } from "@/lib/data/types";
 
@@ -67,21 +68,21 @@ export default async function GroceriesPage() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-      <section className="space-y-4 rounded-3xl border border-white/40 bg-white/80 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
+      <section className="space-y-4 rounded-3xl border border-[#d9e7ff] bg-[#f8fbff]/95 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Current List</p>
           <h2 className="font-display text-2xl text-slate-900">Groceries to buy</h2>
         </div>
 
-        <details className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+        <details className="rounded-2xl border border-[#dfe8ff] bg-[#eef5ff] p-3">
           <summary className="cursor-pointer text-sm font-medium text-slate-700">Reset groceries list</summary>
           <p className="mt-2 text-xs text-slate-600">Choose what happens after reset:</p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <form action={resetGroceriesAction}>
               <input type="hidden" name="mode" value="empty" />
               <button
                 type="submit"
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
               >
                 Empty list
               </button>
@@ -90,7 +91,7 @@ export default async function GroceriesPage() {
               <input type="hidden" name="mode" value="baseline" />
               <button
                 type="submit"
-                className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
+                className="min-h-11 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
               >
                 Baseline staples only
               </button>
@@ -98,11 +99,11 @@ export default async function GroceriesPage() {
           </div>
         </details>
 
-        <form action={addManualGroceryItemAction} className="grid gap-2 rounded-2xl bg-slate-50 p-3">
+        <form action={addManualGroceryItemAction} className="grid gap-2 rounded-2xl border border-[#dfe8ff] bg-white p-3">
           <input
             name="name"
             placeholder="Add item"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
             required
           />
           <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
@@ -110,7 +111,7 @@ export default async function GroceriesPage() {
               name="quantity"
               defaultValue="1"
               inputMode="decimal"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
             />
             <UnitDropdown
               name="unit"
@@ -119,7 +120,7 @@ export default async function GroceriesPage() {
             />
             <button
               type="submit"
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+              className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
             >
               Add
             </button>
@@ -133,23 +134,24 @@ export default async function GroceriesPage() {
             </p>
           ) : (
             neededItems.map((item) => {
+              const displayName = toTitleCase(item.name_display);
               const recipeSource = summarizeSourceLabels(item, "recipe");
               const baselineSource = summarizeSourceLabels(item, "baseline");
 
               return (
-                <article key={item.id} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <article key={item.id} className="rounded-2xl border border-[#dbe7ff] bg-white px-4 py-3 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]">
                   <div className="flex items-center justify-between gap-3">
                     <form action={toggleGroceryItemAction}>
                       <input type="hidden" name="groceryItemId" value={item.id} />
                       <input type="hidden" name="checked" value="true" />
                       <button
                         type="submit"
-                        className="h-5 w-5 rounded-full border border-slate-400 transition hover:border-slate-700"
-                        aria-label={`Mark ${item.name_display} as complete`}
+                        className="h-6 w-6 rounded-full border border-slate-400 transition hover:border-slate-700"
+                        aria-label={`Mark ${displayName} as complete`}
                       />
                     </form>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">{item.name_display}</p>
+                      <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
                       <p className="truncate text-xs text-slate-500">
                         {recipeSource ? (
                           <>
@@ -171,12 +173,12 @@ export default async function GroceriesPage() {
                     <summary className="cursor-pointer text-xs font-medium text-slate-600">
                       Edit item
                     </summary>
-                    <form action={updateGroceryItemAction} className="mt-2 grid gap-2 rounded-xl bg-slate-50 p-2">
+                    <form action={updateGroceryItemAction} className="mt-2 grid gap-2 rounded-xl border border-[#e2ebff] bg-[#f5f8ff] p-2">
                       <input type="hidden" name="groceryItemId" value={item.id} />
                       <input
                         name="name"
-                        defaultValue={item.name_display}
-                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                        defaultValue={displayName}
+                        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
                         required
                       />
                       <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
@@ -184,12 +186,12 @@ export default async function GroceriesPage() {
                           name="quantity"
                           defaultValue={String(item.quantity)}
                           inputMode="decimal"
-                          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                          className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
                         />
                         <UnitDropdown name="unit" defaultValue={item.unit} options={COOKING_UNITS} />
                         <button
                           type="submit"
-                          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+                          className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
                         >
                           Save
                         </button>
@@ -205,52 +207,55 @@ export default async function GroceriesPage() {
         {doneItems.length > 0 ? (
           <div className="space-y-2 pt-3">
             <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Purchased</p>
-            {doneItems.map((item) => (
-              <form
-                key={item.id}
-                action={toggleGroceryItemAction}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
-                <input type="hidden" name="groceryItemId" value={item.id} />
-                <input type="hidden" name="checked" value="false" />
-                <button
-                  type="submit"
-                  className="grid h-5 w-5 place-items-center rounded-full border border-emerald-700 bg-emerald-600 text-[10px] font-bold text-white"
-                  aria-label={`Mark ${item.name_display} as pending`}
+            {doneItems.map((item) => {
+              const displayName = toTitleCase(item.name_display);
+              return (
+                <form
+                  key={item.id}
+                  action={toggleGroceryItemAction}
+                  className="purchase-pop flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-[#eef7f0] px-4 py-3"
                 >
-                  ✓
-                </button>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-slate-500 line-through">{item.name_display}</p>
-                </div>
-                <p className="text-xs text-slate-500">
-                  {formatQuantity(item.quantity)} {item.unit}
-                </p>
-              </form>
-            ))}
+                  <input type="hidden" name="groceryItemId" value={item.id} />
+                  <input type="hidden" name="checked" value="false" />
+                  <button
+                    type="submit"
+                    className="grid h-5 w-5 place-items-center rounded-full border border-emerald-700 bg-emerald-600 text-[10px] font-bold text-white"
+                    aria-label={`Mark ${displayName} as pending`}
+                  >
+                    ✓
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-slate-500 line-through">{displayName}</p>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {formatQuantity(item.quantity)} {item.unit}
+                  </p>
+                </form>
+              );
+            })}
           </div>
         ) : null}
       </section>
 
-      <section className="space-y-4 rounded-3xl border border-white/40 bg-white/80 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
+      <section className="space-y-4 rounded-3xl border border-[#f4dfca] bg-[#fffaf5]/95 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Baseline Staples</p>
           <h2 className="font-display text-2xl text-slate-900">Always stocked</h2>
         </div>
 
-        <form action={addBaselineItemAction} className="grid gap-2 rounded-2xl bg-slate-50 p-3">
+        <form action={addBaselineItemAction} className="grid gap-2 rounded-2xl border border-[#f8e5d4] bg-white p-3">
           <input
             name="name"
             placeholder="Milk"
             required
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
           />
           <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
             <input
               name="quantity"
               defaultValue="1"
               inputMode="decimal"
-              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+              className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
             />
             <UnitDropdown
               name="unit"
@@ -259,7 +264,7 @@ export default async function GroceriesPage() {
             />
             <button
               type="submit"
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+              className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
             >
               Save
             </button>
@@ -280,7 +285,7 @@ export default async function GroceriesPage() {
               >
                 <input type="hidden" name="baselineItemId" value={item.id} />
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{item.name_display}</p>
+                  <p className="text-sm font-medium text-slate-900">{toTitleCase(item.name_display)}</p>
                   <p className="text-xs text-slate-500">
                     {formatQuantity(item.default_quantity)} {item.default_unit}
                   </p>
