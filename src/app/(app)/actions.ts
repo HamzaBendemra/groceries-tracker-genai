@@ -40,6 +40,13 @@ type AddItemInput = {
   sourceType?: "baseline" | "recipe";
   sourceId?: string;
   sourceLabel?: string;
+  supabaseClient?: Awaited<ReturnType<typeof createClient>>;
+};
+
+export type AddRecipeToGroceriesState = {
+  status: "idle" | "success" | "error";
+  message: string | null;
+  eventId: number;
 };
 
 const numberFromForm = (value: FormDataEntryValue | null, fallback = 1) => {
@@ -65,7 +72,7 @@ async function ensureRecipeAccess(supabase: Awaited<ReturnType<typeof createClie
 }
 
 async function mergeGroceryItem(input: AddItemInput) {
-  const supabase = await createClient();
+  const supabase = input.supabaseClient ?? (await createClient());
   const displayName = toTitleCase(input.nameDisplay);
   const normalizedName = normalizeIngredientName(displayName);
   const normalizedUnit = normalizeUnit(input.unit);
@@ -265,6 +272,7 @@ export async function addBaselineToGroceriesAction(formData: FormData) {
     sourceType: "baseline",
     sourceId: baselineItem.id,
     sourceLabel: baselineItem.name_display,
+    supabaseClient: supabase,
   });
 
   revalidatePath("/groceries");
@@ -409,6 +417,7 @@ export async function resetGroceriesAction(formData: FormData) {
         sourceType: "baseline",
         sourceId: baselineItem.id,
         sourceLabel: baselineItem.name_display,
+        supabaseClient: supabase,
       });
     }
   }
@@ -488,7 +497,7 @@ export async function saveRecipeAction(formData: FormData) {
   return { recipeId: recipeRow.id, title: recipeRow.title };
 }
 
-export async function addRecipeToGroceriesAction(formData: FormData) {
+async function addRecipeToGroceriesInternal(formData: FormData) {
   const context = await getAppContext();
   if (!context) {
     throw new Error("Unauthorized");
@@ -535,10 +544,37 @@ export async function addRecipeToGroceriesAction(formData: FormData) {
       sourceType: "recipe",
       sourceId: recipe.id,
       sourceLabel: recipe.title,
+      supabaseClient: supabase,
     });
   }
 
   revalidatePath("/groceries");
+
+  return {
+    recipeTitle: recipe.title,
+    ingredientsCount: ingredients.length,
+  };
+}
+
+export async function addRecipeToGroceriesAction(
+  _prevState: AddRecipeToGroceriesState,
+  formData: FormData,
+): Promise<AddRecipeToGroceriesState> {
+  try {
+    const result = await addRecipeToGroceriesInternal(formData);
+    return {
+      status: "success",
+      message: `Added ${result.ingredientsCount} ingredients from ${result.recipeTitle}.`,
+      eventId: Date.now(),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to add recipe ingredients.";
+    return {
+      status: "error",
+      message,
+      eventId: Date.now(),
+    };
+  }
 }
 
 export async function addRecipeIngredientAction(formData: FormData) {

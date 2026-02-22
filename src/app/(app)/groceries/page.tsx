@@ -140,34 +140,36 @@ export default async function GroceriesPage() {
 
               return (
                 <article key={item.id} className="rounded-2xl border border-[#dbe7ff] bg-white px-4 py-3 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <form action={toggleGroceryItemAction}>
-                      <input type="hidden" name="groceryItemId" value={item.id} />
-                      <input type="hidden" name="checked" value="true" />
-                      <button
-                        type="submit"
-                        className="h-6 w-6 rounded-full border border-slate-400 transition hover:border-slate-700"
-                        aria-label={`Mark ${displayName} as complete`}
-                      />
-                    </form>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
-                      <p className="truncate text-xs text-slate-500">
-                        {recipeSource ? (
-                          <>
-                            Recipe: <span className="font-semibold text-slate-700">{recipeSource}</span>
-                          </>
-                        ) : baselineSource ? (
-                          <>Baseline: {baselineSource}</>
-                        ) : (
-                          "Manual"
-                        )}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-slate-700">
-                      {formatQuantity(item.quantity)} {item.unit}
-                    </p>
-                  </div>
+                  <form action={toggleGroceryItemAction}>
+                    <input type="hidden" name="groceryItemId" value={item.id} />
+                    <input type="hidden" name="checked" value="true" />
+                    <button
+                      type="submit"
+                      aria-label={`Mark ${displayName} as complete`}
+                      className="w-full rounded-xl text-left touch-manipulation"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="h-6 w-6 rounded-full border border-slate-400" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {recipeSource ? (
+                              <>
+                                Recipe: <span className="font-semibold text-slate-700">{recipeSource}</span>
+                              </>
+                            ) : baselineSource ? (
+                              <>Baseline: {baselineSource}</>
+                            ) : (
+                              "Manual"
+                            )}
+                          </p>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700">
+                          {formatQuantity(item.quantity)} {item.unit}
+                        </p>
+                      </div>
+                    </button>
+                  </form>
 
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-medium text-slate-600">
@@ -213,23 +215,25 @@ export default async function GroceriesPage() {
                 <form
                   key={item.id}
                   action={toggleGroceryItemAction}
-                  className="purchase-pop flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-[#eef7f0] px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-[#eef7f0] px-4 py-3"
                 >
                   <input type="hidden" name="groceryItemId" value={item.id} />
                   <input type="hidden" name="checked" value="false" />
                   <button
                     type="submit"
-                    className="grid h-5 w-5 place-items-center rounded-full border border-emerald-700 bg-emerald-600 text-[10px] font-bold text-white"
+                    className="flex w-full items-center justify-between gap-3 text-left touch-manipulation"
                     aria-label={`Mark ${displayName} as pending`}
                   >
-                    ✓
+                    <span className="grid h-5 w-5 place-items-center rounded-full border border-emerald-700 bg-emerald-600 text-[10px] font-bold text-white">
+                      ✓
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-slate-500 line-through">{displayName}</p>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {formatQuantity(item.quantity)} {item.unit}
+                    </p>
                   </button>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-slate-500 line-through">{displayName}</p>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    {formatQuantity(item.quantity)} {item.unit}
-                  </p>
                 </form>
               );
             })}

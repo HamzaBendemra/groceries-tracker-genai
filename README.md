@@ -8,9 +8,19 @@ Mobile-first web app for shared household groceries with AI recipe import from U
 - Baseline staples list + one-tap add to groceries
 - Recipe import from URL, meal photo, or recipe-page photo
 - Manual review/edit before saving imported recipe
+- Saved recipe ingredient management (add/edit/delete)
+- Autosave ingredient edits (no explicit save click)
 - Recipe servings scaling
 - Ingredient merge with unit conversion
 - Source provenance on grocery lines (recipe/baseline links)
+- Revisitable recipe sources:
+  - `Open original recipe` (when URL exists)
+  - `View source image` (when imported from photo)
+- Progress feedback + UX polish:
+  - Pending button states (`Importing...`, `Saving...`, `Adding...`)
+  - Top-right non-blocking toast after adding recipe ingredients to groceries
+  - Mobile-optimized touch targets and whole-row tap to check/uncheck groceries
+- Title Case normalization for ingredient names across groceries/staples/recipes
 - Recipe import logging (history/audit)
 
 ## Tech Stack

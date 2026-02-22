@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import {
   addRecipeIngredientAction,
-  addRecipeToGroceriesAction,
 } from "@/app/(app)/actions";
+import { AddToGroceriesForm } from "@/components/recipes/add-to-groceries-form";
 import { EditableIngredients } from "@/components/recipes/editable-ingredients";
 import { UnitDropdown } from "@/components/forms/unit-dropdown";
 import { getAppContext } from "@/lib/data/context";
@@ -18,6 +18,8 @@ type RecipeListRow = {
   servings: number;
   dietary_tags: string[] | null;
   source_type: string;
+  source_url: string | null;
+  source_image_path: string | null;
   created_at: string;
   recipe_ingredients: Array<{ id: string; name_display: string; quantity: number; unit: string }>;
 };
@@ -32,11 +34,29 @@ export default async function RecipesPage() {
 
   const { data: recipesRaw } = await supabase
     .from("recipes")
-    .select("id,title,description,servings,dietary_tags,source_type,created_at,recipe_ingredients(id,name_display,quantity,unit)")
+    .select("id,title,description,servings,dietary_tags,source_type,source_url,source_image_path,created_at,recipe_ingredients(id,name_display,quantity,unit)")
     .eq("household_id", context.activeHousehold.id)
     .order("created_at", { ascending: false });
 
   const recipes = (recipesRaw ?? []) as RecipeListRow[];
+  const imageUrlByRecipeId = new Map<string, string>();
+
+  const imageEntries = await Promise.all(
+    recipes
+      .filter((recipe) => recipe.source_image_path)
+      .map(async (recipe) => {
+        const { data } = await supabase.storage
+          .from("recipe-images")
+          .createSignedUrl(recipe.source_image_path as string, 60 * 60);
+        return [recipe.id, data?.signedUrl ?? null] as const;
+      }),
+  );
+
+  imageEntries.forEach(([recipeId, signedUrl]) => {
+    if (signedUrl) {
+      imageUrlByRecipeId.set(recipeId, signedUrl);
+    }
+  });
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
@@ -75,21 +95,29 @@ export default async function RecipesPage() {
                   Base servings: <span className="font-medium text-slate-800">{recipe.servings}</span>
                 </div>
 
-                <form action={addRecipeToGroceriesAction} className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                  <input type="hidden" name="recipeId" value={recipe.id} />
-                  <input
-                    name="targetServings"
-                    defaultValue={recipe.servings}
-                    inputMode="decimal"
-                    className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
-                  />
-                  <button
-                    type="submit"
-                    className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+                {recipe.source_url ? (
+                  <a
+                    href={recipe.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex text-sm font-medium text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-800"
                   >
-                    Add to groceries
-                  </button>
-                </form>
+                    Open original recipe
+                  </a>
+                ) : null}
+
+                {imageUrlByRecipeId.get(recipe.id) ? (
+                  <a
+                    href={imageUrlByRecipeId.get(recipe.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex text-sm font-medium text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-800"
+                  >
+                    View source image
+                  </a>
+                ) : null}
+
+                <AddToGroceriesForm recipeId={recipe.id} servings={recipe.servings} />
 
                 <details className="mt-3 rounded-xl border border-[#e2ebff] bg-[#f6f9ff] p-3">
                   <summary className="cursor-pointer text-sm font-medium text-slate-700">
