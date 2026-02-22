@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import {
   addRecipeIngredientAction,
 } from "@/app/(app)/actions";
+import { FormPendingButton } from "@/components/forms/form-pending-button";
 import { AddToGroceriesForm } from "@/components/recipes/add-to-groceries-form";
 import { EditableIngredients } from "@/components/recipes/editable-ingredients";
 import { UnitDropdown } from "@/components/forms/unit-dropdown";
@@ -165,12 +166,11 @@ export default async function RecipesPage() {
                           className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
                         />
                         <UnitDropdown name="unit" defaultValue="unit" options={COOKING_UNITS} />
-                        <button
-                          type="submit"
+                        <FormPendingButton
+                          idleLabel="Add"
+                          pendingLabel="Adding..."
                           className="min-h-11 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
-                        >
-                          Add
-                        </button>
+                        />
                       </div>
                     </form>
                   </details>

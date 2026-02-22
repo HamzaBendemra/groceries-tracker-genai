@@ -72,6 +72,16 @@ npm run build
 npm test
 ```
 
+## CI
+- GitHub Actions workflow: `.github/workflows/ci.yml`
+- Runs on push to `main` and all pull requests.
+- Executes:
+  - `npm ci`
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+- Recommended repo setting: require `CI / checks` status before merge.
+
 ## Test Coverage (MVP Guardrails)
 - Baseline recommendation normalization:
   - Quantity sanitization (including large/string quantities)

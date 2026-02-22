@@ -81,21 +81,19 @@ export default async function GroceriesPage() {
         <div className="grid grid-cols-2 gap-2">
           <form action={resetGroceriesAction}>
             <input type="hidden" name="mode" value="baseline" />
-            <button
-              type="submit"
+            <FormPendingButton
+              idleLabel="Baseline staples only"
+              pendingLabel="Resetting..."
               className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-            >
-              Baseline staples only
-            </button>
+            />
           </form>
           <form action={resetGroceriesAction}>
             <input type="hidden" name="mode" value="empty" />
-            <button
-              type="submit"
+            <FormPendingButton
+              idleLabel="Empty list"
+              pendingLabel="Resetting..."
               className="min-h-11 w-full rounded-xl border border-red-300 bg-white px-3 py-2 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
-            >
-              Empty list
-            </button>
+            />
           </form>
         </div>
 
@@ -118,12 +116,11 @@ export default async function GroceriesPage() {
               defaultValue="unit"
               options={COOKING_UNITS}
             />
-            <button
-              type="submit"
+            <FormPendingButton
+              idleLabel="Add"
+              pendingLabel="Adding..."
               className="min-h-11 rounded-xl border border-emerald-400 bg-white px-4 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-600 hover:text-emerald-800"
-            >
-              Add
-            </button>
+            />
           </div>
         </form>
 
@@ -174,12 +171,11 @@ export default async function GroceriesPage() {
                           className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
                         />
                         <UnitDropdown name="unit" defaultValue={item.unit} options={COOKING_UNITS} />
-                        <button
-                          type="submit"
+                        <FormPendingButton
+                          idleLabel="Save"
+                          pendingLabel="Saving..."
                           className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-                        >
-                          Save
-                        </button>
+                        />
                       </div>
                     </form>
                   </details>
@@ -255,12 +251,11 @@ export default async function GroceriesPage() {
               defaultValue="unit"
               options={COOKING_UNITS}
             />
-            <button
-              type="submit"
+            <FormPendingButton
+              idleLabel="Save"
+              pendingLabel="Saving..."
               className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-            >
-              Save
-            </button>
+            />
           </div>
         </form>
 
@@ -292,12 +287,11 @@ export default async function GroceriesPage() {
                   </form>
                   <form action={deleteBaselineItemAction}>
                     <input type="hidden" name="baselineItemId" value={item.id} />
-                    <button
-                      type="submit"
+                    <FormPendingButton
+                      idleLabel="Delete"
+                      pendingLabel="Deleting..."
                       className="min-h-10 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
+                    />
                   </form>
                 </div>
               </div>
