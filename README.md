@@ -1,6 +1,6 @@
-# Groceries Tracker (GenAI MVP)
+# HomeCart AI
 
-Mobile-first web app for shared household groceries with AI recipe import from URL or photos.
+Collaborative grocery app for families: staples, recipes, and one-tap list building.
 
 ## Features
 - Shared household list with member roles (`owner`, `member`, `helper`)
@@ -83,7 +83,7 @@ npm test
   - File: `src/lib/groceries/add-recipe-to-groceries.test.ts`
 
 ## Deployment
-1. Push repo to GitHub.
+1. Push repo to GitHub (`homecart-ai`).
 2. Import project in Vercel.
 3. Configure env vars in Vercel (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, AI keys).
 4. Ensure Supabase Auth redirect includes production callback URL.
