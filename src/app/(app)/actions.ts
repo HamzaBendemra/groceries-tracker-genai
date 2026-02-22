@@ -152,55 +152,6 @@ async function mergeGroceryItem(input: AddItemInput) {
   }
 }
 
-export async function createInviteAction(formData: FormData) {
-  const context = await getAppContext();
-  if (!context) {
-    throw new Error("Unauthorized");
-  }
-
-  if (context.activeHousehold.role !== "owner") {
-    throw new Error("Only household owners can create invite codes.");
-  }
-
-  const role = (formData.get("role")?.toString() ?? "member") as "member" | "helper";
-  const supabase = await createClient();
-
-  const { error } = await supabase.from("household_invites").insert({
-    household_id: context.activeHousehold.id,
-    created_by: context.userId,
-    role,
-  });
-
-  if (error) {
-    throw new Error(error?.message ?? "Unable to create invite code.");
-  }
-
-  revalidatePath("/household");
-}
-
-export async function acceptInviteAction(formData: FormData) {
-  const context = await getAppContext();
-  if (!context) {
-    throw new Error("Unauthorized");
-  }
-
-  const inviteCode = formData.get("inviteCode")?.toString().trim();
-  if (!inviteCode) {
-    throw new Error("Invite code is required.");
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("accept_household_invite", { input_code: inviteCode });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath("/groceries");
-  revalidatePath("/recipes");
-  revalidatePath("/household");
-}
-
 export async function addBaselineItemAction(formData: FormData) {
   const context = await getAppContext();
   if (!context) {
@@ -511,48 +462,22 @@ async function addRecipeToGroceriesInternal(formData: FormData) {
   const targetServings = numberFromForm(formData.get("targetServings"), 1);
   const supabase = await createClient();
 
-  const { data: recipe, error: recipeError } = await supabase
-    .from("recipes")
-    .select("id,title,servings")
-    .eq("id", recipeId)
-    .eq("household_id", context.activeHousehold.id)
-    .single();
+  const { data, error } = await supabase.rpc("add_recipe_to_groceries", {
+    input_recipe_id: recipeId,
+    input_target_servings: targetServings,
+  });
 
-  if (recipeError || !recipe) {
-    throw new Error(recipeError?.message ?? "Recipe not found.");
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const { data: ingredients, error: ingredientsError } = await supabase
-    .from("recipe_ingredients")
-    .select("name_display,quantity,unit")
-    .eq("recipe_id", recipeId);
-
-  if (ingredientsError || !ingredients) {
-    throw new Error(ingredientsError?.message ?? "Unable to load recipe ingredients.");
-  }
-
-  const ratio = targetServings / recipe.servings;
-
-  for (const ingredient of ingredients) {
-    await mergeGroceryItem({
-      householdId: context.activeHousehold.id,
-      userId: context.userId,
-      nameDisplay: ingredient.name_display,
-      quantity: roundQuantity(ingredient.quantity * ratio),
-      unit: ingredient.unit,
-      category: "recipe",
-      sourceType: "recipe",
-      sourceId: recipe.id,
-      sourceLabel: recipe.title,
-      supabaseClient: supabase,
-    });
-  }
+  const result = (data as { recipe_title?: string; ingredients_count?: number } | null) ?? {};
 
   revalidatePath("/groceries");
 
   return {
-    recipeTitle: recipe.title,
-    ingredientsCount: ingredients.length,
+    recipeTitle: result.recipe_title ?? "Recipe",
+    ingredientsCount: result.ingredients_count ?? 0,
   };
 }
 

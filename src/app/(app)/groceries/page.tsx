@@ -4,10 +4,10 @@ import {
   addBaselineToGroceriesAction,
   addManualGroceryItemAction,
   resetGroceriesAction,
-  toggleGroceryItemAction,
   updateGroceryItemAction,
 } from "@/app/(app)/actions";
 import { UnitDropdown } from "@/components/forms/unit-dropdown";
+import { ToggleGroceryRow } from "@/components/groceries/toggle-grocery-row";
 import { getAppContext } from "@/lib/data/context";
 import { COOKING_UNITS } from "@/lib/ingredients/cooking-units";
 import { toTitleCase } from "@/lib/ingredients/title-case";
@@ -140,36 +140,19 @@ export default async function GroceriesPage() {
 
               return (
                 <article key={item.id} className="rounded-2xl border border-[#dbe7ff] bg-white px-4 py-3 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]">
-                  <form action={toggleGroceryItemAction}>
-                    <input type="hidden" name="groceryItemId" value={item.id} />
-                    <input type="hidden" name="checked" value="true" />
-                    <button
-                      type="submit"
-                      aria-label={`Mark ${displayName} as complete`}
-                      className="w-full rounded-xl text-left touch-manipulation"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="h-6 w-6 rounded-full border border-slate-400" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-900">{displayName}</p>
-                          <p className="truncate text-xs text-slate-500">
-                            {recipeSource ? (
-                              <>
-                                Recipe: <span className="font-semibold text-slate-700">{recipeSource}</span>
-                              </>
-                            ) : baselineSource ? (
-                              <>Baseline: {baselineSource}</>
-                            ) : (
-                              "Manual"
-                            )}
-                          </p>
-                        </div>
-                        <p className="text-sm font-medium text-slate-700">
-                          {formatQuantity(item.quantity)} {item.unit}
-                        </p>
-                      </div>
-                    </button>
-                  </form>
+                  <ToggleGroceryRow
+                    groceryItemId={item.id}
+                    checked={false}
+                    title={displayName}
+                    subtitle={
+                      recipeSource
+                        ? `Recipe: ${recipeSource}`
+                        : baselineSource
+                          ? `Baseline: ${baselineSource}`
+                          : "Manual"
+                    }
+                    quantityLabel={`${formatQuantity(item.quantity)} ${item.unit}`}
+                  />
 
                   <details className="mt-2">
                     <summary className="cursor-pointer text-xs font-medium text-slate-600">
@@ -212,29 +195,17 @@ export default async function GroceriesPage() {
             {doneItems.map((item) => {
               const displayName = toTitleCase(item.name_display);
               return (
-                <form
+                <div
                   key={item.id}
-                  action={toggleGroceryItemAction}
                   className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-[#eef7f0] px-4 py-3"
                 >
-                  <input type="hidden" name="groceryItemId" value={item.id} />
-                  <input type="hidden" name="checked" value="false" />
-                  <button
-                    type="submit"
-                    className="flex w-full items-center justify-between gap-3 text-left touch-manipulation"
-                    aria-label={`Mark ${displayName} as pending`}
-                  >
-                    <span className="grid h-5 w-5 place-items-center rounded-full border border-emerald-700 bg-emerald-600 text-[10px] font-bold text-white">
-                      ✓
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-slate-500 line-through">{displayName}</p>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {formatQuantity(item.quantity)} {item.unit}
-                    </p>
-                  </button>
-                </form>
+                  <ToggleGroceryRow
+                    groceryItemId={item.id}
+                    checked
+                    title={displayName}
+                    quantityLabel={`${formatQuantity(item.quantity)} ${item.unit}`}
+                  />
+                </div>
               );
             })}
           </div>

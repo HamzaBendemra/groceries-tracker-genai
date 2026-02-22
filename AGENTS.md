@@ -12,7 +12,7 @@ Project guidance for coding agents working in this repository.
 
 ## Current Version
 - Source of truth: `src/lib/version.ts`
-- Current: `v0.4.0`
+- Current: `v0.5.0`
 
 ## Mandatory Version Rule
 - Every time you prepare a commit that will be pushed, bump `APP_VERSION` in `src/lib/version.ts`.
