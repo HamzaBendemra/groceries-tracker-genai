@@ -32,24 +32,67 @@ export default function Icon() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            position: "relative",
             boxShadow: "0 25px 60px rgba(15,23,42,0.35)",
           }}
         >
           <div
             style={{
-              color: "#f8fafc",
-              fontSize: 150,
-              fontWeight: 800,
-              letterSpacing: -4,
-              lineHeight: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transform: "translateY(-4px)",
+              position: "absolute",
+              top: 86,
+              left: 84,
+              width: 74,
+              height: 14,
+              background: "#f8fafc",
+              borderRadius: 999,
+              transform: "rotate(-20deg)",
             }}
-          >
-            HC
-          </div>
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 126,
+              left: 92,
+              width: 182,
+              height: 94,
+              border: "12px solid #f8fafc",
+              borderRadius: 20,
+              borderTopWidth: 10,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 190,
+              left: 102,
+              width: 168,
+              height: 10,
+              background: "#f8fafc",
+              borderRadius: 999,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 230,
+              left: 124,
+              width: 40,
+              height: 40,
+              border: "10px solid #f8fafc",
+              borderRadius: 999,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 230,
+              left: 216,
+              width: 40,
+              height: 40,
+              border: "10px solid #f8fafc",
+              borderRadius: 999,
+            }}
+          />
         </div>
       </div>
     ),

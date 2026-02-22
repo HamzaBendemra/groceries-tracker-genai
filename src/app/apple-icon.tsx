@@ -32,24 +32,67 @@ export default function AppleIcon() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            position: "relative",
             boxShadow: "0 10px 20px rgba(15,23,42,0.28)",
           }}
         >
           <div
             style={{
-              color: "#f8fafc",
-              fontSize: 56,
-              fontWeight: 800,
-              letterSpacing: -2,
-              lineHeight: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transform: "translateY(-1px)",
+              position: "absolute",
+              top: 28,
+              left: 24,
+              width: 25,
+              height: 5,
+              background: "#f8fafc",
+              borderRadius: 999,
+              transform: "rotate(-20deg)",
             }}
-          >
-            HC
-          </div>
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 40,
+              left: 26,
+              width: 62,
+              height: 34,
+              border: "5px solid #f8fafc",
+              borderRadius: 8,
+              borderTopWidth: 4,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 62,
+              left: 30,
+              width: 54,
+              height: 4,
+              background: "#f8fafc",
+              borderRadius: 999,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 36,
+              width: 14,
+              height: 14,
+              border: "4px solid #f8fafc",
+              borderRadius: 999,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 80,
+              left: 66,
+              width: 14,
+              height: 14,
+              border: "4px solid #f8fafc",
+              borderRadius: 999,
+            }}
+          />
         </div>
       </div>
     ),
