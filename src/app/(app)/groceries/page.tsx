@@ -3,9 +3,12 @@ import {
   addBaselineItemAction,
   addBaselineToGroceriesAction,
   addManualGroceryItemAction,
+  deleteBaselineItemAction,
+  recommendBaselineStaplesAction,
   resetGroceriesAction,
   updateGroceryItemAction,
 } from "@/app/(app)/actions";
+import { FormPendingButton } from "@/components/forms/form-pending-button";
 import { UnitDropdown } from "@/components/forms/unit-dropdown";
 import { ToggleGroceryRow } from "@/components/groceries/toggle-grocery-row";
 import { getAppContext } from "@/lib/data/context";
@@ -213,9 +216,18 @@ export default async function GroceriesPage() {
       </section>
 
       <section className="space-y-4 rounded-3xl border border-[#f4dfca] bg-[#fffaf5]/95 p-5 shadow-[0_20px_60px_-45px_rgba(24,40,78,0.45)] backdrop-blur">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Baseline Staples</p>
-          <h2 className="font-display text-2xl text-slate-900">Always stocked</h2>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Baseline Staples</p>
+            <h2 className="font-display text-2xl text-slate-900">Always stocked</h2>
+          </div>
+          <form action={recommendBaselineStaplesAction}>
+            <FormPendingButton
+              idleLabel="Recommend Basics"
+              pendingLabel="Thinking..."
+              className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+            />
+          </form>
         </div>
 
         <form action={addBaselineItemAction} className="grid gap-2 rounded-2xl border border-[#f8e5d4] bg-white p-3">
@@ -253,25 +265,37 @@ export default async function GroceriesPage() {
             </p>
           ) : (
             baselineItems?.map((item) => (
-              <form
+              <div
                 key={item.id}
-                action={addBaselineToGroceriesAction}
                 className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3"
               >
-                <input type="hidden" name="baselineItemId" value={item.id} />
                 <div>
                   <p className="text-sm font-medium text-slate-900">{toTitleCase(item.name_display)}</p>
                   <p className="text-xs text-slate-500">
                     {formatQuantity(item.default_quantity)} {item.default_unit}
                   </p>
                 </div>
-                <button
-                  type="submit"
-                  className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-                >
-                  + Add
-                </button>
-              </form>
+                <div className="flex items-center gap-2">
+                  <form action={deleteBaselineItemAction}>
+                    <input type="hidden" name="baselineItemId" value={item.id} />
+                    <button
+                      type="submit"
+                      className="min-h-10 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                  <form action={addBaselineToGroceriesAction}>
+                    <input type="hidden" name="baselineItemId" value={item.id} />
+                    <button
+                      type="submit"
+                      className="min-h-10 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+                    >
+                      + Add
+                    </button>
+                  </form>
+                </div>
+              </div>
             ))
           )}
         </div>

@@ -14,6 +14,9 @@ export function NavLinks() {
   const pathname = usePathname();
   const router = useRouter();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const currentHref =
+    links.find((link) => pathname === link.href || pathname.startsWith(`${link.href}/`))?.href ?? null;
+  const activeHref = pendingHref && pendingHref !== currentHref ? pendingHref : currentHref;
 
   useEffect(() => {
     links.forEach((link) => {
@@ -24,7 +27,7 @@ export function NavLinks() {
   return (
     <nav className="grid grid-cols-2 gap-2 rounded-2xl bg-white/65 p-1.5 shadow-[0_8px_24px_-20px_rgba(15,23,42,0.45)] touch-manipulation">
       {links.map((link) => {
-        const isActive = pathname.startsWith(link.href) || pendingHref === link.href;
+        const isActive = activeHref === link.href;
 
         return (
           <Link

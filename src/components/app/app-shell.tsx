@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { NavLinks } from "@/components/app/nav-links";
+import { RefreshButton } from "@/components/app/refresh-button";
 import { APP_VERSION } from "@/lib/version";
 
 type AppShellProps = {
@@ -25,14 +26,7 @@ export function AppShell({ children, displayName }: AppShellProps) {
             <h1 className="font-display text-3xl text-slate-900">Family&apos;s Groceries</h1>
             <p className="mt-1 text-sm text-slate-600">Signed in as {displayName}</p>
           </div>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="min-h-11 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-            >
-              Sign out
-            </button>
-          </form>
+          <RefreshButton />
         </div>
         <NavLinks />
       </header>
@@ -40,7 +34,11 @@ export function AppShell({ children, displayName }: AppShellProps) {
       <main className="mx-auto mt-5 w-full max-w-5xl px-4 sm:px-8">{children}</main>
       <footer className="mx-auto mt-8 w-full max-w-5xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-xs font-medium text-slate-500 sm:px-8">
         <div className="grid grid-cols-3 items-center">
-          <span />
+          <form action={signOut} className="justify-self-start">
+            <button type="submit" className="touch-manipulation text-left underline-offset-2 hover:underline">
+              Sign out
+            </button>
+          </form>
           <span className="text-center">For Christine ❤️</span>
           <span className="text-right">{APP_VERSION}</span>
         </div>

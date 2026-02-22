@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAppContext } from "@/lib/data/context";
+import { suggestBaselineStaples } from "@/lib/baseline/suggest";
 import { normalizeIngredientName } from "@/lib/ingredients/normalize";
 import { findMergeTarget } from "@/lib/ingredients/merge";
 import { toTitleCase } from "@/lib/ingredients/title-case";
@@ -190,6 +191,69 @@ export async function addBaselineItemAction(formData: FormData) {
   revalidatePath("/groceries");
 }
 
+export async function recommendBaselineStaplesAction() {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createClient();
+  const { data: existingItems, error: existingError } = await supabase
+    .from("baseline_items")
+    .select("name_display,name_normalized")
+    .eq("household_id", context.activeHousehold.id)
+    .eq("is_active", true);
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const suggestions = await suggestBaselineStaples((existingItems ?? []).map((item) => item.name_display));
+  const normalizedExisting = new Set((existingItems ?? []).map((item) => item.name_normalized));
+  const rowsToUpsert: Array<{
+    household_id: string;
+    created_by: string;
+    name_display: string;
+    name_normalized: string;
+    category: string;
+    default_quantity: number;
+    default_unit: string;
+    is_active: boolean;
+  }> = [];
+
+  for (const suggestion of suggestions) {
+    const displayName = toTitleCase(suggestion.name);
+    const normalizedName = normalizeIngredientName(displayName);
+    if (!normalizedName || normalizedExisting.has(normalizedName)) {
+      continue;
+    }
+
+    normalizedExisting.add(normalizedName);
+    rowsToUpsert.push({
+      household_id: context.activeHousehold.id,
+      created_by: context.userId,
+      name_display: displayName,
+      name_normalized: normalizedName,
+      category: "baseline",
+      default_quantity: roundQuantity(suggestion.quantity),
+      default_unit: normalizeUnit(suggestion.unit),
+      is_active: true,
+    });
+  }
+
+  if (rowsToUpsert.length > 0) {
+    const { error: upsertError } = await supabase
+      .from("baseline_items")
+      .upsert(rowsToUpsert, { onConflict: "household_id,name_normalized" });
+
+    if (upsertError) {
+      throw new Error(upsertError.message);
+    }
+  }
+
+  revalidatePath("/groceries");
+}
+
 export async function addBaselineToGroceriesAction(formData: FormData) {
   const context = await getAppContext();
   if (!context) {
@@ -225,6 +289,31 @@ export async function addBaselineToGroceriesAction(formData: FormData) {
     sourceLabel: baselineItem.name_display,
     supabaseClient: supabase,
   });
+
+  revalidatePath("/groceries");
+}
+
+export async function deleteBaselineItemAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const baselineItemId = formData.get("baselineItemId")?.toString();
+  if (!baselineItemId) {
+    throw new Error("Baseline item not provided.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("baseline_items")
+    .update({ is_active: false })
+    .eq("id", baselineItemId)
+    .eq("household_id", context.activeHousehold.id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   revalidatePath("/groceries");
 }
