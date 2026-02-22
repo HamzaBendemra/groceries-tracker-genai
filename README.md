@@ -1,6 +1,6 @@
 # HomeCart AI
 
-Collaborative grocery app for families: staples, recipes, and one-tap list building.
+Personal app leveraging GenAI to manage a family's meal plan: support for staples, recipes, and one-tap list building.
 
 ## Features
 - Shared household list with member roles (`owner`, `member`, `helper`)
