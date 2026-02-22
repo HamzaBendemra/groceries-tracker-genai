@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Fraunces, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${sans.variable} ${display.variable} antialiased`}>
         {children}
+        <Analytics />
       </body>
     </html>
   );
