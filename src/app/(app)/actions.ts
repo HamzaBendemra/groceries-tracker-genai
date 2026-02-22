@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAppContext } from "@/lib/data/context";
 import { suggestBaselineStaples } from "@/lib/baseline/suggest";
+import { addRecipeToGroceriesWithFallback } from "@/lib/groceries/add-recipe-to-groceries";
 import { normalizeIngredientName } from "@/lib/ingredients/normalize";
 import { findMergeTarget } from "@/lib/ingredients/merge";
 import { toTitleCase } from "@/lib/ingredients/title-case";
@@ -252,6 +254,28 @@ export async function recommendBaselineStaplesAction() {
   }
 
   revalidatePath("/groceries");
+  redirect("/groceries");
+}
+
+export async function resetBaselineStaplesAction() {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("baseline_items")
+    .update({ is_active: false })
+    .eq("household_id", context.activeHousehold.id)
+    .eq("is_active", true);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/groceries");
+  redirect("/groceries");
 }
 
 export async function addBaselineToGroceriesAction(formData: FormData) {
@@ -551,23 +575,72 @@ async function addRecipeToGroceriesInternal(formData: FormData) {
   const targetServings = numberFromForm(formData.get("targetServings"), 1);
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc("add_recipe_to_groceries", {
-    input_recipe_id: recipeId,
-    input_target_servings: targetServings,
+  const result = await addRecipeToGroceriesWithFallback({
+    targetServings,
+    runRpc: async () => {
+      const { data, error } = await supabase.rpc("add_recipe_to_groceries", {
+        input_recipe_id: recipeId,
+        input_target_servings: targetServings,
+      });
+      return {
+        data: (data as { recipe_title?: string; ingredients_count?: number } | null) ?? null,
+        error: error ? { message: error.message } : null,
+      };
+    },
+    loadRecipe: async () => {
+      const { data, error } = await supabase
+        .from("recipes")
+        .select("id,title,servings")
+        .eq("id", recipeId)
+        .eq("household_id", context.activeHousehold.id)
+        .single();
+
+      return {
+        data: data
+          ? {
+              id: data.id,
+              title: data.title,
+              servings: data.servings,
+            }
+          : null,
+        error: error ? { message: error.message } : null,
+      };
+    },
+    loadIngredients: async () => {
+      const { data, error } = await supabase
+        .from("recipe_ingredients")
+        .select("name_display,quantity,unit")
+        .eq("recipe_id", recipeId);
+
+      return {
+        data: data
+          ? data.map((ingredient) => ({
+              name_display: ingredient.name_display,
+              quantity: ingredient.quantity,
+              unit: ingredient.unit,
+            }))
+          : null,
+        error: error ? { message: error.message } : null,
+      };
+    },
+    mergeIngredient: async (ingredient) => {
+      await mergeGroceryItem({
+        householdId: context.activeHousehold.id,
+        userId: context.userId,
+        nameDisplay: ingredient.nameDisplay,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        category: "recipe",
+        sourceType: "recipe",
+        sourceId: ingredient.recipeId,
+        sourceLabel: ingredient.recipeTitle,
+        supabaseClient: supabase,
+      });
+    },
   });
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  const result = (data as { recipe_title?: string; ingredients_count?: number } | null) ?? {};
-
   revalidatePath("/groceries");
-
-  return {
-    recipeTitle: result.recipe_title ?? "Recipe",
-    ingredientsCount: result.ingredients_count ?? 0,
-  };
+  return result;
 }
 
 export async function addRecipeToGroceriesAction(
@@ -689,4 +762,47 @@ export async function deleteRecipeIngredientAction(formData: FormData) {
   }
 
   revalidatePath("/recipes");
+}
+
+export async function deleteRecipeAction(formData: FormData) {
+  const context = await getAppContext();
+  if (!context) {
+    throw new Error("Unauthorized");
+  }
+
+  const recipeId = formData.get("recipeId")?.toString();
+  if (!recipeId) {
+    throw new Error("Recipe is required.");
+  }
+
+  const supabase = await createClient();
+  await ensureRecipeAccess(supabase, recipeId, context.activeHousehold.id);
+
+  const { data: recipeRow, error: recipeLoadError } = await supabase
+    .from("recipes")
+    .select("source_image_path")
+    .eq("id", recipeId)
+    .eq("household_id", context.activeHousehold.id)
+    .single();
+
+  if (recipeLoadError || !recipeRow) {
+    throw new Error(recipeLoadError?.message ?? "Recipe not found.");
+  }
+
+  const { error: recipeDeleteError } = await supabase
+    .from("recipes")
+    .delete()
+    .eq("id", recipeId)
+    .eq("household_id", context.activeHousehold.id);
+
+  if (recipeDeleteError) {
+    throw new Error(recipeDeleteError.message);
+  }
+
+  if (recipeRow.source_image_path) {
+    await supabase.storage.from("recipe-images").remove([recipeRow.source_image_path]);
+  }
+
+  revalidatePath("/recipes");
+  redirect("/recipes");
 }

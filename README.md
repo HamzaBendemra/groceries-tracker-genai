@@ -69,7 +69,18 @@ npm run dev
 ```bash
 npm run lint
 npm run build
+npm test
 ```
+
+## Test Coverage (MVP Guardrails)
+- Baseline recommendation normalization:
+  - Quantity sanitization (including large/string quantities)
+  - Deduplication and max-item cap enforcement
+  - File: `src/lib/baseline/suggest.test.ts`
+- Recipe add fallback path:
+  - Uses RPC result when available
+  - Falls back to ingredient merge flow if RPC fails
+  - File: `src/lib/groceries/add-recipe-to-groceries.test.ts`
 
 ## Deployment
 1. Push repo to GitHub.

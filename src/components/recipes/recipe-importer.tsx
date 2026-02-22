@@ -152,27 +152,27 @@ export function RecipeImporter() {
         <h2 className="font-display text-2xl text-slate-900">From URL or photo</h2>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <button
           type="button"
           onClick={() => setMode("url")}
-          className={`rounded-full px-4 py-2 text-sm ${mode === "url" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
+          className={`min-h-11 rounded-full px-2 py-2 text-xs font-medium ${mode === "url" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
         >
           URL
         </button>
         <button
           type="button"
           onClick={() => setMode("image_meal")}
-          className={`rounded-full px-4 py-2 text-sm ${mode === "image_meal" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
+          className={`min-h-11 rounded-full px-2 py-2 text-xs font-medium ${mode === "image_meal" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
         >
           Meal Photo
         </button>
         <button
           type="button"
           onClick={() => setMode("image_recipe_page")}
-          className={`rounded-full px-4 py-2 text-sm ${mode === "image_recipe_page" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
+          className={`min-h-11 rounded-full px-2 py-2 text-xs font-medium ${mode === "image_recipe_page" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
         >
-          Recipe Page Photo
+          Recipe Photo
         </button>
       </div>
 

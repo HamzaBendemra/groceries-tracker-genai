@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import {
   addRecipeToGroceriesAction,
+  deleteRecipeAction,
   type AddRecipeToGroceriesState,
 } from "@/app/(app)/actions";
 import { FormPendingButton } from "@/components/forms/form-pending-button";
@@ -21,20 +22,38 @@ export function AddToGroceriesForm({ recipeId, servings }: AddToGroceriesFormPro
 
   return (
     <>
-      <form action={formAction} className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-        <input type="hidden" name="recipeId" value={recipeId} />
-        <input
-          name="targetServings"
-          defaultValue={servings}
-          inputMode="decimal"
-          className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
-        />
-        <FormPendingButton
-          idleLabel="Add to groceries"
-          pendingLabel="Adding..."
-          className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-70"
-        />
-      </form>
+      <div className="mt-3 grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)] items-stretch gap-2">
+        <form action={formAction} className="contents">
+          <input type="hidden" name="recipeId" value={recipeId} />
+          <input
+            name="targetServings"
+            defaultValue={servings}
+            inputMode="decimal"
+            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+          />
+          <FormPendingButton
+            idleLabel="Add to groceries"
+            pendingLabel="Adding..."
+            className="h-11 w-full min-w-0 rounded-xl border border-emerald-400 bg-white px-1.5 py-2 text-[11px] font-medium leading-tight text-emerald-700 transition hover:border-emerald-600 hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-70"
+          />
+        </form>
+        <form
+          className="min-w-0"
+          action={deleteRecipeAction}
+          onSubmit={(event) => {
+            if (!window.confirm("Delete this recipe? This cannot be undone.")) {
+              event.preventDefault();
+            }
+          }}
+        >
+          <input type="hidden" name="recipeId" value={recipeId} />
+          <FormPendingButton
+            idleLabel="Delete recipe"
+            pendingLabel="Deleting..."
+            className="h-11 w-full min-w-0 rounded-xl border border-red-300 bg-white px-1.5 py-2 text-[11px] font-medium leading-tight text-red-600 transition hover:border-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+          />
+        </form>
+      </div>
 
       {state.status !== "idle" && state.message ? (
         <div

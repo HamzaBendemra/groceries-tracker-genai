@@ -74,92 +74,109 @@ export default async function RecipesPage() {
           </p>
         ) : (
           <div className="space-y-3">
-            {recipes?.map((recipe) => (
-              <article key={recipe.id} className="rounded-2xl border border-[#dbe7ff] bg-white p-4 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]">
-                <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{recipe.source_type.replaceAll("_", " ")}</p>
-                <h3 className="mt-1 font-display text-xl text-slate-900">{recipe.title}</h3>
-                {recipe.description ? <p className="mt-1 text-sm text-slate-600">{recipe.description}</p> : null}
+            {recipes?.map((recipe) => {
+              const signedImageUrl = imageUrlByRecipeId.get(recipe.id) ?? null;
 
-                <div className="mt-3 flex flex-wrap gap-1">
-                  {(recipe.dietary_tags ?? []).map((tag: string) => (
-                    <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
-                      {tag}
-                    </span>
-                  ))}
-                  <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-800">
-                    {recipe.recipe_ingredients.length} ingredients
-                  </span>
-                </div>
-
-                <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                  Base servings: <span className="font-medium text-slate-800">{recipe.servings}</span>
-                </div>
-
-                {recipe.source_url ? (
-                  <a
-                    href={recipe.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex text-sm font-medium text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-800"
-                  >
-                    Open original recipe
-                  </a>
-                ) : null}
-
-                {imageUrlByRecipeId.get(recipe.id) ? (
-                  <a
-                    href={imageUrlByRecipeId.get(recipe.id)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex text-sm font-medium text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-800"
-                  >
-                    View source image
-                  </a>
-                ) : null}
-
-                <AddToGroceriesForm recipeId={recipe.id} servings={recipe.servings} />
-
-                <details className="mt-3 rounded-xl border border-[#e2ebff] bg-[#f6f9ff] p-3">
-                  <summary className="cursor-pointer text-sm font-medium text-slate-700">
-                    View and edit ingredients
-                  </summary>
-                  <div className="mt-3">
-                    <EditableIngredients
-                      recipeId={recipe.id}
-                      initialIngredients={recipe.recipe_ingredients.map((ingredient) => ({
-                        ...ingredient,
-                        name_display: toTitleCase(ingredient.name_display),
-                      }))}
+              return (
+                <article
+                  key={recipe.id}
+                  className="min-w-0 rounded-2xl border border-[#dbe7ff] bg-white p-4 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.4)]"
+                >
+                  {signedImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={signedImageUrl}
+                      alt={`${recipe.title} source`}
+                      className="mb-3 h-40 w-full rounded-xl object-cover"
+                      loading="lazy"
                     />
+                  ) : null}
+
+                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{recipe.source_type.replaceAll("_", " ")}</p>
+                  <h3 className="mt-1 font-display text-xl text-slate-900">{recipe.title}</h3>
+                  {recipe.description ? <p className="mt-1 text-sm text-slate-600">{recipe.description}</p> : null}
+
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {(recipe.dietary_tags ?? []).map((tag: string) => (
+                      <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
+                        {tag}
+                      </span>
+                    ))}
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-800">
+                      {recipe.recipe_ingredients.length} ingredients
+                    </span>
                   </div>
 
-                  <form action={addRecipeIngredientAction} className="mt-3 grid gap-2 rounded-xl border border-[#dce7ff] bg-white p-2">
-                    <input type="hidden" name="recipeId" value={recipe.id} />
-                    <input
-                      name="name"
-                      placeholder="New ingredient"
-                      required
-                      className="min-h-11 rounded-lg border border-slate-300 bg-[#f2f6ff] px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500"
-                    />
-                    <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
-                      <input
-                        name="quantity"
-                        defaultValue="1"
-                        inputMode="decimal"
-                        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                  <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                    Base servings: <span className="font-medium text-slate-800">{recipe.servings}</span>
+                  </div>
+
+                  {recipe.source_url ? (
+                    <a
+                      href={recipe.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex text-sm font-medium text-sky-700 underline decoration-sky-300 underline-offset-2 hover:text-sky-800"
+                    >
+                      Open original recipe
+                    </a>
+                  ) : null}
+
+                  {signedImageUrl ? (
+                    <a
+                      href={signedImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex text-sm font-medium text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-800"
+                    >
+                      View source image
+                    </a>
+                  ) : null}
+
+                  <AddToGroceriesForm recipeId={recipe.id} servings={recipe.servings} />
+
+                  <details className="mt-3 rounded-xl border border-[#e2ebff] bg-[#f6f9ff] p-3">
+                    <summary className="cursor-pointer text-sm font-medium text-slate-700">
+                      View and edit ingredients
+                    </summary>
+                    <div className="mt-3">
+                      <EditableIngredients
+                        recipeId={recipe.id}
+                        initialIngredients={recipe.recipe_ingredients.map((ingredient) => ({
+                          ...ingredient,
+                          name_display: toTitleCase(ingredient.name_display),
+                        }))}
                       />
-                      <UnitDropdown name="unit" defaultValue="unit" options={COOKING_UNITS} />
-                      <button
-                        type="submit"
-                        className="min-h-11 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
-                      >
-                        Add
-                      </button>
                     </div>
-                  </form>
-                </details>
-              </article>
-            ))}
+
+                    <form action={addRecipeIngredientAction} className="mt-3 grid gap-2 rounded-xl border border-[#dce7ff] bg-white p-2">
+                      <input type="hidden" name="recipeId" value={recipe.id} />
+                      <input
+                        name="name"
+                        placeholder="New ingredient"
+                        required
+                        className="min-h-11 rounded-lg border border-slate-300 bg-[#f2f6ff] px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-500"
+                      />
+                      <div className="grid grid-cols-[7rem_1fr_auto] gap-2">
+                        <input
+                          name="quantity"
+                          defaultValue="1"
+                          inputMode="decimal"
+                          className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-500"
+                        />
+                        <UnitDropdown name="unit" defaultValue="unit" options={COOKING_UNITS} />
+                        <button
+                          type="submit"
+                          className="min-h-11 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </form>
+                  </details>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

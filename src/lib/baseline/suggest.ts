@@ -90,7 +90,7 @@ type SuggestedBaselineItem = {
   unit: string;
 };
 
-function toSafeQuantity(input: string | number): number {
+export function toSafeQuantity(input: string | number): number {
   if (typeof input === "number") {
     if (!Number.isFinite(input) || input <= 0) {
       return 1;
@@ -106,6 +106,32 @@ function toSafeQuantity(input: string | number): number {
   }
 
   return Math.min(parsed, 10000);
+}
+
+export function normalizeSuggestedBaselineItems(
+  items: Array<{ name: string; quantity: string | number; unit: string }>,
+  maxItems: number,
+): SuggestedBaselineItem[] {
+  const deduped = new Map<string, SuggestedBaselineItem>();
+
+  for (const item of items) {
+    if (deduped.size >= maxItems) {
+      break;
+    }
+
+    const key = item.name.trim().toLowerCase();
+    if (!key || deduped.has(key)) {
+      continue;
+    }
+
+    deduped.set(key, {
+      name: item.name.trim(),
+      quantity: toSafeQuantity(item.quantity),
+      unit: item.unit.trim(),
+    });
+  }
+
+  return Array.from(deduped.values());
 }
 
 export async function suggestBaselineStaples(existingItems: string[]): Promise<SuggestedBaselineItem[]> {
@@ -128,24 +154,5 @@ export async function suggestBaselineStaples(existingItems: string[]): Promise<S
   }
 
   const parsed = BaselineSuggestionSchema.parse(extractJson(rawOutput));
-  const deduped = new Map<string, SuggestedBaselineItem>();
-
-  for (const item of parsed.items) {
-    if (deduped.size >= 40) {
-      break;
-    }
-
-    const key = item.name.trim().toLowerCase();
-    if (!key || deduped.has(key)) {
-      continue;
-    }
-
-    deduped.set(key, {
-      name: item.name.trim(),
-      quantity: toSafeQuantity(item.quantity),
-      unit: item.unit.trim(),
-    });
-  }
-
-  return Array.from(deduped.values());
+  return normalizeSuggestedBaselineItems(parsed.items, 40);
 }

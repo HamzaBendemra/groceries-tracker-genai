@@ -5,6 +5,7 @@ import {
   addManualGroceryItemAction,
   deleteBaselineItemAction,
   recommendBaselineStaplesAction,
+  resetBaselineStaplesAction,
   resetGroceriesAction,
   updateGroceryItemAction,
 } from "@/app/(app)/actions";
@@ -77,30 +78,26 @@ export default async function GroceriesPage() {
           <h2 className="font-display text-2xl text-slate-900">Groceries to buy</h2>
         </div>
 
-        <details className="rounded-2xl border border-[#dfe8ff] bg-[#eef5ff] p-3">
-          <summary className="cursor-pointer text-sm font-medium text-slate-700">Reset groceries list</summary>
-          <p className="mt-2 text-xs text-slate-600">Choose what happens after reset:</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <form action={resetGroceriesAction}>
-              <input type="hidden" name="mode" value="empty" />
-              <button
-                type="submit"
-                className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-              >
-                Empty list
-              </button>
-            </form>
-            <form action={resetGroceriesAction}>
-              <input type="hidden" name="mode" value="baseline" />
-              <button
-                type="submit"
-                className="min-h-11 w-full rounded-xl bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-700"
-              >
-                Baseline staples only
-              </button>
-            </form>
-          </div>
-        </details>
+        <div className="grid grid-cols-2 gap-2">
+          <form action={resetGroceriesAction}>
+            <input type="hidden" name="mode" value="baseline" />
+            <button
+              type="submit"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+            >
+              Baseline staples only
+            </button>
+          </form>
+          <form action={resetGroceriesAction}>
+            <input type="hidden" name="mode" value="empty" />
+            <button
+              type="submit"
+              className="min-h-11 w-full rounded-xl border border-red-300 bg-white px-3 py-2 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
+            >
+              Empty list
+            </button>
+          </form>
+        </div>
 
         <form action={addManualGroceryItemAction} className="grid gap-2 rounded-2xl border border-[#dfe8ff] bg-white p-3">
           <input
@@ -123,7 +120,7 @@ export default async function GroceriesPage() {
             />
             <button
               type="submit"
-              className="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+              className="min-h-11 rounded-xl border border-emerald-400 bg-white px-4 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-600 hover:text-emerald-800"
             >
               Add
             </button>
@@ -221,13 +218,22 @@ export default async function GroceriesPage() {
             <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Baseline Staples</p>
             <h2 className="font-display text-2xl text-slate-900">Always stocked</h2>
           </div>
-          <form action={recommendBaselineStaplesAction}>
-            <FormPendingButton
-              idleLabel="Recommend Basics"
-              pendingLabel="Thinking..."
-              className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-            />
-          </form>
+          <div className="flex flex-col items-end gap-1.5">
+            <form action={recommendBaselineStaplesAction}>
+              <FormPendingButton
+                idleLabel="Recommend Basics"
+                pendingLabel="Thinking..."
+                className="min-h-9 w-32 rounded-lg border border-slate-300 bg-white px-3 py-1 text-[11px] font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
+              />
+            </form>
+            <form action={resetBaselineStaplesAction}>
+              <FormPendingButton
+                idleLabel="Reset Staples"
+                pendingLabel="Resetting..."
+                className="min-h-9 w-32 rounded-lg border border-red-300 bg-white px-3 py-1 text-[11px] font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
+              />
+            </form>
+          </div>
         </div>
 
         <form action={addBaselineItemAction} className="grid gap-2 rounded-2xl border border-[#f8e5d4] bg-white p-3">
@@ -278,12 +284,11 @@ export default async function GroceriesPage() {
                 <div className="flex items-center gap-2">
                   <form action={addBaselineToGroceriesAction}>
                     <input type="hidden" name="baselineItemId" value={item.id} />
-                    <button
-                      type="submit"
-                      className="min-h-10 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
-                    >
-                      + Add
-                    </button>
+                    <FormPendingButton
+                      idleLabel="+ Add"
+                      pendingLabel="Adding..."
+                      className="min-h-10 rounded-full border border-emerald-400 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 transition hover:border-emerald-600 hover:text-emerald-800"
+                    />
                   </form>
                   <form action={deleteBaselineItemAction}>
                     <input type="hidden" name="baselineItemId" value={item.id} />
