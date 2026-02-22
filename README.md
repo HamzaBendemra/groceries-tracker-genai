@@ -6,6 +6,8 @@ Mobile-first web app for shared household groceries with AI recipe import from U
 - Shared household list with member roles (`owner`, `member`, `helper`)
 - Auth with email magic link or Google OAuth (Supabase Auth)
 - Baseline staples list + one-tap add to groceries
+- AI-powered baseline staple recommendations (prioritized essentials, up to 40 items)
+- Baseline staple delete support
 - Recipe import from URL, meal photo, or recipe-page photo
 - Manual review/edit before saving imported recipe
 - Saved recipe ingredient management (add/edit/delete)

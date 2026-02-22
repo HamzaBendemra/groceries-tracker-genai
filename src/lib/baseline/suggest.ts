@@ -5,12 +5,12 @@ import { env, isAnthropicConfigured, isOpenAiConfigured } from "@/lib/env";
 
 const BaselineItemSchema = z.object({
   name: z.string().min(1),
-  quantity: z.number().positive().max(100).optional().default(1),
+  quantity: z.union([z.number(), z.string()]).optional().default(1),
   unit: z.string().min(1).optional().default("unit"),
 });
 
 const BaselineSuggestionSchema = z.object({
-  items: z.array(BaselineItemSchema).min(1).max(30),
+  items: z.array(BaselineItemSchema).min(1),
 });
 
 const systemPrompt = `You recommend absolute basic grocery baseline staples for a household.
@@ -25,7 +25,8 @@ Rules:
 - Keep only absolute basics; avoid niche/specialty ingredients.
 - Prefer practical staples and short, purchase-friendly names.
 - Use metric cooking units where applicable (g, kg, ml, l) or "unit".
-- Keep list concise (12-18 items).
+- Prioritize by importance: most essential staples first.
+- Return up to 40 items max.
 - Do not include duplicates.
 - No markdown, no code block, only JSON.`;
 
@@ -89,6 +90,24 @@ type SuggestedBaselineItem = {
   unit: string;
 };
 
+function toSafeQuantity(input: string | number): number {
+  if (typeof input === "number") {
+    if (!Number.isFinite(input) || input <= 0) {
+      return 1;
+    }
+
+    return Math.min(input, 10000);
+  }
+
+  const numericText = input.replace(/[^0-9.]/g, "");
+  const parsed = Number(numericText);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 1;
+  }
+
+  return Math.min(parsed, 10000);
+}
+
 export async function suggestBaselineStaples(existingItems: string[]): Promise<SuggestedBaselineItem[]> {
   const userPrompt = [
     "Recommend baseline staples now.",
@@ -112,6 +131,10 @@ export async function suggestBaselineStaples(existingItems: string[]): Promise<S
   const deduped = new Map<string, SuggestedBaselineItem>();
 
   for (const item of parsed.items) {
+    if (deduped.size >= 40) {
+      break;
+    }
+
     const key = item.name.trim().toLowerCase();
     if (!key || deduped.has(key)) {
       continue;
@@ -119,7 +142,7 @@ export async function suggestBaselineStaples(existingItems: string[]): Promise<S
 
     deduped.set(key, {
       name: item.name.trim(),
-      quantity: item.quantity,
+      quantity: toSafeQuantity(item.quantity),
       unit: item.unit.trim(),
     });
   }

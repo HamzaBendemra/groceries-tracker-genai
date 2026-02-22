@@ -276,15 +276,6 @@ export default async function GroceriesPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <form action={deleteBaselineItemAction}>
-                    <input type="hidden" name="baselineItemId" value={item.id} />
-                    <button
-                      type="submit"
-                      className="min-h-10 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-                  </form>
                   <form action={addBaselineToGroceriesAction}>
                     <input type="hidden" name="baselineItemId" value={item.id} />
                     <button
@@ -292,6 +283,15 @@ export default async function GroceriesPage() {
                       className="min-h-10 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-slate-900"
                     >
                       + Add
+                    </button>
+                  </form>
+                  <form action={deleteBaselineItemAction}>
+                    <input type="hidden" name="baselineItemId" value={item.id} />
+                    <button
+                      type="submit"
+                      className="min-h-10 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:border-red-500 hover:text-red-700"
+                    >
+                      Delete
                     </button>
                   </form>
                 </div>
