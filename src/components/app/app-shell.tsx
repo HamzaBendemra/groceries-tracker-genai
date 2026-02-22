@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { NavLinks } from "@/components/app/nav-links";
+import { APP_VERSION } from "@/lib/version";
 
 type AppShellProps = {
   children: ReactNode;
@@ -37,8 +38,12 @@ export function AppShell({ children, displayName }: AppShellProps) {
       </header>
 
       <main className="mx-auto mt-5 w-full max-w-5xl px-4 sm:px-8">{children}</main>
-      <footer className="mx-auto mt-8 w-full max-w-5xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-slate-500 sm:px-8">
-        For Christine ❤️
+      <footer className="mx-auto mt-8 w-full max-w-5xl px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-xs font-medium text-slate-500 sm:px-8">
+        <div className="grid grid-cols-3 items-center">
+          <span />
+          <span className="text-center">For Christine ❤️</span>
+          <span className="text-right">{APP_VERSION}</span>
+        </div>
       </footer>
     </div>
   );

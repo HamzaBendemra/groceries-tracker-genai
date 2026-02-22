@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/env";
+import { APP_VERSION } from "@/lib/version";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,11 @@ export default async function AuthPage() {
           </div>
         )}
       </div>
-      <p className="pb-[max(0.75rem,env(safe-area-inset-bottom))] text-center text-xs font-medium text-slate-500">
-        For Christine ❤️
-      </p>
+      <div className="grid grid-cols-3 items-center pb-[max(0.75rem,env(safe-area-inset-bottom))] text-xs font-medium text-slate-500">
+        <span />
+        <span className="text-center">For Christine ❤️</span>
+        <span className="text-right">{APP_VERSION}</span>
+      </div>
     </div>
   );
 }
