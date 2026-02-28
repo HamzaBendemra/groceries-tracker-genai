@@ -18,6 +18,7 @@ export function RecipeImporter() {
   const [mode, setMode] = useState<ImportMode>("url");
   const [url, setUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [draft, setDraft] = useState<RecipeDraft | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +138,7 @@ export function RecipeImporter() {
       setDraft(null);
       setUrl("");
       setFile(null);
+      setFileInputKey((value) => value + 1);
       router.refresh();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Recipe save failed.");
@@ -177,20 +179,50 @@ export function RecipeImporter() {
       </div>
 
       {mode === "url" ? (
-        <input
-          type="url"
-          value={url}
-          onChange={(event) => setUrl(event.target.value)}
-          placeholder="https://example.com/recipe"
-          className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
-        />
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <input
+            type="url"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder="https://example.com/recipe"
+            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-500"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setUrl("");
+              setError(null);
+              setStatus(null);
+            }}
+            disabled={!url || isImporting}
+            className="min-h-11 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Clear
+          </button>
+        </div>
       ) : (
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
-        />
+        <div className="grid grid-cols-[1fr_auto] gap-2">
+          <input
+            key={fileInputKey}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setFile(null);
+              setFileInputKey((value) => value + 1);
+              setError(null);
+              setStatus(null);
+            }}
+            disabled={!file || isImporting}
+            className="min-h-11 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Clear
+          </button>
+        </div>
       )}
 
       <button

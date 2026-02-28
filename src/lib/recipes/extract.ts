@@ -8,9 +8,51 @@ import { normalizeIngredientName } from "@/lib/ingredients/normalize";
 import { toTitleCase } from "@/lib/ingredients/title-case";
 import { normalizeUnit } from "@/lib/ingredients/units";
 
+function parseNumericLike(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const input = value.trim();
+  if (!input) {
+    return null;
+  }
+
+  const mixedFractionMatch = input.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixedFractionMatch) {
+    const whole = Number(mixedFractionMatch[1]);
+    const numerator = Number(mixedFractionMatch[2]);
+    const denominator = Number(mixedFractionMatch[3]);
+    if (denominator !== 0) {
+      return whole + numerator / denominator;
+    }
+  }
+
+  const fractionMatch = input.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (fractionMatch) {
+    const numerator = Number(fractionMatch[1]);
+    const denominator = Number(fractionMatch[2]);
+    if (denominator !== 0) {
+      return numerator / denominator;
+    }
+  }
+
+  const parsed = Number(input);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toSafePositive(value: unknown, fallback: number): number {
+  const parsed = parseNumericLike(value);
+  return parsed !== null && parsed > 0 ? parsed : fallback;
+}
+
 const IngredientSchema = z.object({
   name: z.string().min(1),
-  quantity: z.number().positive().default(1),
+  quantity: z.union([z.number(), z.string(), z.null()]).optional().transform((value) => toSafePositive(value, 1)),
   unit: z.string().default("unit"),
   optional: z.boolean().default(false),
   notes: z.string().optional(),
@@ -19,11 +61,15 @@ const IngredientSchema = z.object({
 const ExtractedRecipeSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
-  servings: z.number().positive().default(4),
+  servings: z.union([z.number(), z.string(), z.null()]).optional().transform((value) => toSafePositive(value, 4)),
   dietaryTags: z.array(z.string()).default([]),
   ingredients: z.array(IngredientSchema).min(1),
   confidence: z.number().min(0).max(1).default(0.65),
 });
+
+export function parseExtractedRecipe(input: unknown): z.infer<typeof ExtractedRecipeSchema> {
+  return ExtractedRecipeSchema.parse(input);
+}
 
 const systemPrompt = `You extract structured recipe data for grocery planning.
 Return strict JSON with this schema:
@@ -39,6 +85,7 @@ Return strict JSON with this schema:
 }
 Rules:
 - Estimate missing quantities conservatively and include low confidence when uncertain.
+- If metadata or structured data contains an explicit ingredient list, include all of those ingredients.
 - Use common grocery units only.
 - Keep ingredient names short and purchase-friendly.
 - No markdown, no code block, only JSON.`;
@@ -75,27 +122,142 @@ function toRecipeDraft(parsed: z.infer<typeof ExtractedRecipeSchema>, sourceType
   };
 }
 
-function extractTextFromHtml(html: string): { title?: string; description?: string; text: string } {
+function normalizeSnippet(input: string, maxLength: number): string {
+  return input.replace(/\s+/g, " ").replaceAll("\u00a0", " ").trim().slice(0, maxLength);
+}
+
+function addSnippet(target: string[], value: string | null | undefined, maxLength = 2500) {
+  if (!value) {
+    return;
+  }
+
+  const normalized = normalizeSnippet(value, maxLength);
+  if (!normalized || target.includes(normalized)) {
+    return;
+  }
+
+  target.push(normalized);
+}
+
+function collectStructuredRecipeSnippets(node: unknown, snippets: string[]) {
+  if (Array.isArray(node)) {
+    node.forEach((entry) => collectStructuredRecipeSnippets(entry, snippets));
+    return;
+  }
+
+  if (!node || typeof node !== "object") {
+    return;
+  }
+
+  const record = node as Record<string, unknown>;
+  const typeValue = record["@type"];
+  const typeText = Array.isArray(typeValue) ? typeValue.join(",").toLowerCase() : String(typeValue ?? "").toLowerCase();
+  const looksLikeRecipe = typeText.includes("recipe") || "recipeIngredient" in record;
+
+  if (looksLikeRecipe) {
+    const lines: string[] = [];
+    if (typeof record.name === "string") {
+      lines.push(`Name: ${record.name}`);
+    }
+    if (typeof record.description === "string") {
+      lines.push(`Description: ${record.description}`);
+    }
+
+    if (Array.isArray(record.recipeIngredient)) {
+      lines.push(`Ingredients: ${record.recipeIngredient.map((entry) => String(entry)).join(" | ")}`);
+    }
+
+    const instructions = record.recipeInstructions;
+    if (Array.isArray(instructions)) {
+      const steps = instructions
+        .map((entry) => {
+          if (typeof entry === "string") {
+            return entry;
+          }
+          if (entry && typeof entry === "object" && typeof (entry as Record<string, unknown>).text === "string") {
+            return (entry as Record<string, unknown>).text as string;
+          }
+          return "";
+        })
+        .filter(Boolean);
+      if (steps.length > 0) {
+        lines.push(`Instructions: ${steps.join(" | ")}`);
+      }
+    }
+
+    if (typeof instructions === "string") {
+      lines.push(`Instructions: ${instructions}`);
+    }
+
+    addSnippet(snippets, lines.join("\n"), 4000);
+  }
+
+  Object.values(record).forEach((entry) => collectStructuredRecipeSnippets(entry, snippets));
+}
+
+export function extractTextFromHtml(html: string): {
+  title?: string;
+  description?: string;
+  text: string;
+  metadataSnippets: string[];
+} {
   const root = parse(html);
   const title = root.querySelector("title")?.text.trim();
   const description =
     root.querySelector('meta[name="description"]')?.getAttribute("content")?.trim() ??
-    root.querySelector('meta[property="og:description"]')?.getAttribute("content")?.trim();
+    root.querySelector('meta[property="og:description"]')?.getAttribute("content")?.trim() ??
+    root.querySelector('meta[name="twitter:description"]')?.getAttribute("content")?.trim();
 
-  const candidateNodes = [
-    root.querySelector("article"),
-    root.querySelector("main"),
-    root.querySelector("body"),
-  ].filter(Boolean);
+  const metadataSnippets: string[] = [];
+  [
+    'meta[property="og:title"]',
+    'meta[name="twitter:title"]',
+    'meta[property="og:description"]',
+    'meta[name="description"]',
+    'meta[name="twitter:description"]',
+    'meta[property="og:image:alt"]',
+  ].forEach((selector) => {
+    addSnippet(metadataSnippets, root.querySelector(selector)?.getAttribute("content"));
+  });
 
-  const text = candidateNodes
-    .map((node) => node?.textContent ?? "")
-    .join("\n")
-    .replace(/\s+/g, " ")
-    .slice(0, 12000)
-    .trim();
+  root.querySelectorAll('link[rel="alternate"][type*="oembed"]').forEach((node) => {
+    addSnippet(metadataSnippets, node.getAttribute("title"), 4000);
+  });
 
-  return { title, description, text };
+  root.querySelectorAll('script[type="application/ld+json"]').forEach((node) => {
+    const content = node.text.trim();
+    if (!content) {
+      return;
+    }
+
+    try {
+      collectStructuredRecipeSnippets(JSON.parse(content), metadataSnippets);
+    } catch {
+      // Ignore malformed JSON-LD blocks.
+    }
+  });
+
+  const cleanedRoot = parse(html);
+  cleanedRoot.querySelectorAll("script,style,noscript,template,svg").forEach((node) => node.remove());
+
+  const textSnippets: string[] = [];
+  [
+    cleanedRoot.querySelector("article"),
+    cleanedRoot.querySelector("main"),
+    cleanedRoot.querySelector('[role="main"]'),
+    cleanedRoot.querySelector("body"),
+  ]
+    .filter(Boolean)
+    .forEach((node) => {
+      addSnippet(textSnippets, node?.textContent ?? "", 12000);
+    });
+
+  return {
+    title,
+    description,
+    text: textSnippets.join("\n\n").slice(0, 12000).trim(),
+    metadataSnippets: metadataSnippets.slice(0, 8),
+  };
 }
 
 async function extractWithOpenAi(userPrompt: string, image?: { mimeType: string; base64Data: string }): Promise<string> {
@@ -201,6 +363,11 @@ export async function extractRecipeFromUrl(url: string): Promise<RecipeDraft> {
     `Source URL: ${url}`,
     extracted.title ? `Page title: ${extracted.title}` : "",
     extracted.description ? `Page description: ${extracted.description}` : "",
+    extracted.metadataSnippets.length > 0
+      ? `Metadata and structured hints: ${extracted.metadataSnippets
+          .map((snippet, index) => `[${index + 1}] ${snippet}`)
+          .join("\n\n")}`
+      : "",
     `Page text snippet: ${extracted.text}`,
   ]
     .filter(Boolean)
@@ -210,7 +377,7 @@ export async function extractRecipeFromUrl(url: string): Promise<RecipeDraft> {
     userPrompt,
   });
 
-  const parsed = ExtractedRecipeSchema.parse(extractJson(modelOutput));
+  const parsed = parseExtractedRecipe(extractJson(modelOutput));
   const recipe = toRecipeDraft(parsed, "url");
   recipe.sourceUrl = url;
   return recipe;
@@ -231,5 +398,5 @@ export async function extractRecipeFromImage(args: {
     image: { mimeType: args.mimeType, base64Data: args.base64Data },
   });
 
-  return toRecipeDraft(ExtractedRecipeSchema.parse(extractJson(modelOutput)), args.sourceType);
+  return toRecipeDraft(parseExtractedRecipe(extractJson(modelOutput)), args.sourceType);
 }
